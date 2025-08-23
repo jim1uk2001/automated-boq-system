@@ -1,7 +1,7 @@
 from typing import Dict, List, Optional, Any
 import uuid
 from datetime import datetime
-from .models import User, Project, Drawing, BOQItem, Bid, BidEvaluation, TradePackage, TradeBid
+from .models import User, Project, Drawing, BOQItem, Bid, BidEvaluation, TradePackage, TradeBid, ScheduledEmail
 
 class InMemoryDatabase:
     """In-memory database for proof of concept"""
@@ -15,6 +15,7 @@ class InMemoryDatabase:
         self.bid_evaluations: Dict[str, BidEvaluation] = {}
         self.trade_packages: Dict[str, TradePackage] = {}
         self.trade_bids: Dict[str, TradeBid] = {}
+        self.scheduled_emails: Dict[str, ScheduledEmail] = {}
         
         self._create_sample_data()
     
@@ -151,5 +152,25 @@ class InMemoryDatabase:
     
     def get_trade_bid(self, trade_bid_id: str) -> Optional[TradeBid]:
         return self.trade_bids.get(trade_bid_id)
+    
+    def create_scheduled_email(self, scheduled_email: ScheduledEmail) -> ScheduledEmail:
+        self.scheduled_emails[scheduled_email.id] = scheduled_email
+        return scheduled_email
+    
+    def get_scheduled_email(self, email_id: str) -> Optional[ScheduledEmail]:
+        return self.scheduled_emails.get(email_id)
+    
+    def get_scheduled_emails_by_project(self, project_id: str) -> List[ScheduledEmail]:
+        return [email for email in self.scheduled_emails.values() if email.project_id == project_id]
+    
+    def get_scheduled_emails_by_user(self, user_id: str) -> List[ScheduledEmail]:
+        return [email for email in self.scheduled_emails.values() if email.created_by == user_id]
+    
+    def update_scheduled_email(self, scheduled_email: ScheduledEmail) -> ScheduledEmail:
+        self.scheduled_emails[scheduled_email.id] = scheduled_email
+        return scheduled_email
+    
+    def get_pending_scheduled_emails(self) -> List[ScheduledEmail]:
+        return [email for email in self.scheduled_emails.values() if email.status == "scheduled"]
 
 db = InMemoryDatabase()

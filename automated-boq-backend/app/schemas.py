@@ -1,6 +1,6 @@
 from typing import Optional, List, Dict, Any
 from datetime import datetime
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, validator
 from .models import DrawingType, MeasurementStandard, ProjectStatus, BidStatus
 
 class UserCreate(BaseModel):
@@ -176,3 +176,57 @@ class TradeBidCreate(BaseModel):
     trade_package_id: str
     trade_specialization: str
     items: List[BidItemCreate]
+
+class ScheduleEmailRequest(BaseModel):
+    project_id: str
+    email_type: str
+    recipient_emails: List[str]
+    send_datetime: datetime
+    trade_package_id: Optional[str] = None
+    custom_message: Optional[str] = None
+    
+    @validator('recipient_emails')
+    def validate_recipient_emails(cls, v):
+        if not v:
+            raise ValueError('At least one recipient email is required')
+        if len(v) > 10:
+            raise ValueError('Maximum 10 recipient emails allowed')
+        return v
+    
+    @validator('email_type')
+    def validate_email_type(cls, v):
+        if v not in ['full_boq', 'trade_package']:
+            raise ValueError('Email type must be either "full_boq" or "trade_package"')
+        return v
+
+class ScheduledEmailResponse(BaseModel):
+    id: str
+    project_id: str
+    email_type: str
+    recipient_emails: List[str]
+    subject: str
+    send_datetime: datetime
+    status: str
+    trade_package_id: Optional[str] = None
+    custom_message: Optional[str] = None
+    created_by: str
+    created_at: datetime
+    sent_at: Optional[datetime] = None
+
+class EmailPreviewResponse(BaseModel):
+    project_id: str
+    email_type: str
+    subject: str
+    html_content: str
+    attachment_filename: str
+    attachment_size_mb: float
+    recipient_emails: List[str]
+    send_datetime: datetime
+    
+class EmailApprovalRequest(BaseModel):
+    approved: bool
+    approval_notes: Optional[str] = None
+
+class CostEstimateRequest(BaseModel):
+    hourly_rate: float
+    currency: str = "GBP"

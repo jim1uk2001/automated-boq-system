@@ -140,3 +140,18 @@ class TradeBid(BaseModel):
     rank: Optional[int] = None
     submitted_at: Optional[datetime] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
+
+class ScheduledEmail(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    project_id: str
+    email_type: str  # "full_boq", "trade_package", "architect_queries"
+    recipient_emails: List[str]
+    subject: str
+    send_datetime: datetime
+    status: str = "scheduled"  # "scheduled", "sent", "failed", "cancelled"
+    trade_package_id: Optional[str] = None
+    custom_message: Optional[str] = None
+    created_by: str
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    sent_at: Optional[datetime] = None
+    error_message: Optional[str] = None

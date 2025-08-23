@@ -86,7 +86,8 @@ class ExcelGenerator:
         
         column_widths = [15, 30, 10, 12, 15, 25, 12]
         for col, width in enumerate(column_widths, 1):
-            drawing_ws.column_dimensions[drawing_ws.cell(row=1, column=col).column_letter].width = width
+            column_letter = chr(64 + col)  # Convert column number to letter (A, B, C, etc.)
+            drawing_ws.column_dimensions[column_letter].width = width
         
         for row in drawing_ws.iter_rows():
             for cell in row:

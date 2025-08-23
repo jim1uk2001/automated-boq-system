@@ -6,7 +6,13 @@ import io
 from datetime import datetime, timedelta
 
 from .models import *
-from .schemas import *
+from .schemas import (
+    UserCreate, UserResponse, ProjectCreate, ProjectResponse, 
+    DrawingResponse, ArchitectQueriesResponse, BOQItemResponse, BidCreate, BidResponse,
+    BidEvaluationResponse, CostEstimateRequest, CostEstimateResponse,
+    TradePackageResponse, TradePackageDetailResponse,
+    ScheduleEmailRequest, ScheduledEmailResponse, EmailPreviewResponse, EmailApprovalRequest
+)
 from .database import db
 from .auth import *
 from .services.drawing_processor import DrawingProcessor
@@ -14,6 +20,7 @@ from .services.boq_generator import BOQGenerator
 from .services.excel_generator import ExcelGenerator
 from .services.cost_estimator import CostEstimator, Currency
 from .services.trade_package_generator import TradePackageGenerator
+from .services.email_service import email_service
 import io
 
 app = FastAPI(
@@ -21,6 +28,17 @@ app = FastAPI(
     description="Automated construction procurement system with BOQ generation and bidding portal",
     version="1.0.0"
 )
+
+@app.on_event("startup")
+async def startup_event():
+    """Configure email service on startup"""
+    import os
+    email_service.configure_smtp(
+        smtp_server=os.getenv("SMTP_SERVER", "smtp.gmail.com"),
+        smtp_port=int(os.getenv("SMTP_PORT", "587")),
+        sender_email=os.getenv("SENDER_EMAIL", "noreply@bojim-boq.com"),
+        sender_password=os.getenv("SENDER_PASSWORD", "demo_password")
+    )
 
 # Disable CORS. Do not remove this for full-stack development.
 app.add_middleware(
@@ -767,3 +785,232 @@ async def download_trade_package_excel(
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         headers={"Content-Disposition": f"attachment; filename={filename}"}
     )
+
+@app.post("/projects/{project_id}/schedule-email", response_model=ScheduledEmailResponse)
+async def schedule_boq_email(
+    project_id: str,
+    request: ScheduleEmailRequest,
+    current_user: User = Depends(get_current_client)
+):
+    """Schedule BOQ email for future delivery with up to 10 recipients"""
+    project = db.get_project(project_id)
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    if project.client_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to schedule emails for this project")
+    
+    if request.send_datetime <= datetime.utcnow():
+        raise HTTPException(status_code=400, detail="Send date must be in the future")
+    
+    if request.email_type == "trade_package":
+        if not request.trade_package_id:
+            raise HTTPException(status_code=400, detail="Trade package ID required for trade package emails")
+        
+        trade_package = db.get_trade_package(request.trade_package_id)
+        if not trade_package or trade_package.project_id != project_id:
+            raise HTTPException(status_code=404, detail="Trade package not found")
+        
+        subject = f"BOQ - {project.name} - {trade_package.trade_name} Package"
+    else:
+        subject = f"BOQ - {project.name} - Complete Project"
+    
+    from .models import ScheduledEmail
+    scheduled_email = ScheduledEmail(
+        project_id=project_id,
+        email_type=request.email_type,
+        recipient_emails=request.recipient_emails,
+        subject=subject,
+        send_datetime=request.send_datetime,
+        trade_package_id=request.trade_package_id,
+        custom_message=request.custom_message,
+        created_by=current_user.id,
+        status="scheduled"
+    )
+    
+    db.create_scheduled_email(scheduled_email)
+    
+    return ScheduledEmailResponse(
+        id=scheduled_email.id,
+        project_id=scheduled_email.project_id,
+        email_type=scheduled_email.email_type,
+        recipient_emails=scheduled_email.recipient_emails,
+        subject=scheduled_email.subject,
+        send_datetime=scheduled_email.send_datetime,
+        status=scheduled_email.status,
+        trade_package_id=scheduled_email.trade_package_id,
+        custom_message=scheduled_email.custom_message,
+        created_by=scheduled_email.created_by,
+        created_at=scheduled_email.created_at,
+        sent_at=scheduled_email.sent_at
+    )
+
+@app.get("/projects/{project_id}/email-preview")
+async def preview_boq_email(
+    project_id: str,
+    email_type: str = Query(...),
+    trade_package_id: Optional[str] = Query(None),
+    current_user: User = Depends(get_current_client)
+):
+    """Preview BOQ email content and attachment before scheduling"""
+    project = db.get_project(project_id)
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    if project.client_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to preview emails for this project")
+    
+    if email_type == "trade_package":
+        if not trade_package_id:
+            raise HTTPException(status_code=400, detail="Trade package ID required for trade package emails")
+        
+        trade_package = db.get_trade_package(trade_package_id)
+        if not trade_package or trade_package.project_id != project_id:
+            raise HTTPException(status_code=404, detail="Trade package not found")
+        
+        drawings = db.get_drawings_by_project(project_id)
+        excel_content = excel_generator.generate_excel_boq(project, trade_package.boq_items, drawings)
+        filename = f"BOQ_{project.name.replace(' ', '_')}_{trade_package.trade_name}_{datetime.utcnow().strftime('%Y%m%d')}.xlsx"
+        trade_name = trade_package.trade_name
+    else:
+        boq_items = db.get_boq_items_by_project(project_id)
+        if not boq_items:
+            raise HTTPException(status_code=404, detail="No BOQ items found")
+        
+        drawings = db.get_drawings_by_project(project_id)
+        excel_content = excel_generator.generate_excel_boq(project, boq_items, drawings)
+        filename = f"BOQ_{project.name.replace(' ', '_')}_{datetime.utcnow().strftime('%Y%m%d')}.xlsx"
+        trade_name = None
+    
+    msg = email_service.create_boq_email(project, [], excel_content, filename, email_type, trade_name)
+    
+    html_content = ""
+    for part in msg.walk():
+        if part.get_content_type() == "text/html":
+            html_content = part.get_payload(decode=True).decode('utf-8')
+            break
+    
+    return EmailPreviewResponse(
+        project_id=project_id,
+        email_type=email_type,
+        subject=msg['Subject'],
+        html_content=html_content,
+        attachment_filename=filename,
+        attachment_size_mb=len(excel_content) / (1024 * 1024),
+        recipient_emails=[],
+        send_datetime=datetime.utcnow()
+    )
+
+@app.get("/projects/{project_id}/scheduled-emails", response_model=List[ScheduledEmailResponse])
+async def get_scheduled_emails(
+    project_id: str,
+    current_user: User = Depends(get_current_client)
+):
+    """Get all scheduled emails for a project"""
+    project = db.get_project(project_id)
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    if project.client_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to view scheduled emails for this project")
+    
+    scheduled_emails = db.get_scheduled_emails_by_project(project_id)
+    
+    return [
+        ScheduledEmailResponse(
+            id=email.id,
+            project_id=email.project_id,
+            email_type=email.email_type,
+            recipient_emails=email.recipient_emails,
+            subject=email.subject,
+            send_datetime=email.send_datetime,
+            status=email.status,
+            trade_package_id=email.trade_package_id,
+            custom_message=email.custom_message,
+            created_by=email.created_by,
+            created_at=email.created_at,
+            sent_at=email.sent_at
+        )
+        for email in scheduled_emails
+    ]
+
+@app.post("/scheduled-emails/{email_id}/approve")
+async def approve_scheduled_email(
+    email_id: str,
+    approval: EmailApprovalRequest,
+    current_user: User = Depends(get_current_client)
+):
+    """Approve or reject a scheduled email"""
+    scheduled_email = db.get_scheduled_email(email_id)
+    if not scheduled_email:
+        raise HTTPException(status_code=404, detail="Scheduled email not found")
+    
+    project = db.get_project(scheduled_email.project_id)
+    if not project or project.client_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to approve this email")
+    
+    if scheduled_email.status != "scheduled":
+        raise HTTPException(status_code=400, detail="Email cannot be modified - already processed")
+    
+    if approval.approved:
+        scheduled_email.status = "approved"
+        
+        project = db.get_project(scheduled_email.project_id)
+        if scheduled_email.email_type == "trade_package":
+            trade_package = db.get_trade_package(scheduled_email.trade_package_id)
+            drawings = db.get_drawings_by_project(scheduled_email.project_id)
+            excel_content = excel_generator.generate_boq_excel(project, trade_package.boq_items)
+            filename = f"BOQ_{project.name.replace(' ', '_')}_{trade_package.trade_name}_{datetime.utcnow().strftime('%Y%m%d')}.xlsx"
+            trade_name = trade_package.trade_name
+        else:
+            boq_items = db.get_boq_items_by_project(scheduled_email.project_id)
+            drawings = db.get_drawings_by_project(scheduled_email.project_id)
+            excel_content = excel_generator.generate_boq_excel(project, boq_items)
+            filename = f"BOQ_{project.name.replace(' ', '_')}_{datetime.utcnow().strftime('%Y%m%d')}.xlsx"
+            trade_name = None
+        
+        msg = email_service.create_boq_email(
+            project=project,
+            recipient_emails=scheduled_email.recipient_emails,
+            excel_content=excel_content,
+            filename=filename,
+            email_type=scheduled_email.email_type,
+            trade_name=trade_name,
+            custom_message=scheduled_email.custom_message
+        )
+        
+        email_service.schedule_email(
+            msg=msg,
+            send_datetime=scheduled_email.send_datetime,
+            email_id=scheduled_email.id,
+            project_id=scheduled_email.project_id
+        )
+    else:
+        scheduled_email.status = "rejected"
+        scheduled_email.error_message = approval.approval_notes
+    
+    db.update_scheduled_email(scheduled_email)
+    
+    return {"message": f"Email {'approved' if approval.approved else 'rejected'} successfully"}
+
+@app.delete("/scheduled-emails/{email_id}")
+async def cancel_scheduled_email(
+    email_id: str,
+    current_user: User = Depends(get_current_client)
+):
+    """Cancel a scheduled email"""
+    scheduled_email = db.get_scheduled_email(email_id)
+    if not scheduled_email:
+        raise HTTPException(status_code=404, detail="Scheduled email not found")
+    
+    project = db.get_project(scheduled_email.project_id)
+    if not project or project.client_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to cancel this email")
+    
+    if scheduled_email.status in ["sent", "failed"]:
+        raise HTTPException(status_code=400, detail="Cannot cancel email that has already been processed")
+    
+    scheduled_email.status = "cancelled"
+    db.update_scheduled_email(scheduled_email)
+    
+    return {"message": "Email cancelled successfully"}
