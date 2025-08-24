@@ -166,70 +166,69 @@ async def get_project(project_id: str, current_user: User = Depends(get_current_
     )
 
 @app.post("/projects/{project_id}/drawings/upload")
-async def upload_drawings(
+async def upload_drawings_single(
     project_id: str,
-    files: List[UploadFile] = File(...),
-    current_user: User = Depends(get_current_client)
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user)
 ):
-    """Upload and process drawings"""
+    """Upload a single drawing for a project"""
     project = db.get_project(project_id)
-    if not project or project.client_id != current_user.id:
+    if not project:
         raise HTTPException(status_code=404, detail="Project not found")
     
-    uploaded_drawings = []
+    if current_user.role == "client" and project.client_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized")
     
-    for file in files:
-        file_extension = file.filename.split('.')[-1].lower()
-        if file_extension not in ['pdf', 'dwg', 'dxf']:
-            raise HTTPException(status_code=400, detail=f"Unsupported file type: {file_extension}")
+    if file.content_type not in ["application/pdf", "application/octet-stream"]:
+        raise HTTPException(status_code=400, detail="Invalid file type")
         
-        drawing = Drawing(
-            project_id=project_id,
-            filename=file.filename,
-            file_path=f"/uploads/{file.filename}",  # In production, use proper file storage
-            file_type=file_extension
-        )
-        db.create_drawing(drawing)
-        
-        try:
-            file_content = await file.read()
-            processing_result = await drawing_processor.process_drawing(drawing, file_content)
-            
-            drawing.processed = True
-            drawing.processing_status = "completed"
-            drawing.processed_at = datetime.utcnow()
-            
-            if processing_result.get('drawing_type'):
-                drawing.drawing_type = DrawingType(processing_result['drawing_type'])
-            
-            if processing_result.get('scale_info'):
-                drawing.scale = processing_result['scale_info']
-            
-            if processing_result.get('quality_assessment'):
-                quality_data = processing_result['quality_assessment']
-                drawing.quality_score = quality_data.get('quality_score', 0)
-                drawing.quality_issues = quality_data.get('issues', [])
-            
-            if processing_result.get('architect_queries'):
-                drawing.architect_queries = processing_result['architect_queries']
-            
-            db.update_drawing(drawing)
-            
-            uploaded_drawings.append({
-                "drawing": drawing,
-                "processing_result": processing_result
-            })
-            
-        except Exception as e:
-            drawing.processing_status = "failed"
-            drawing.error_message = str(e)
-            db.update_drawing(drawing)
-            uploaded_drawings.append({
-                "drawing": drawing,
-                "error": str(e)
-            })
+    file_extension = file.filename.split('.')[-1].lower()
+    if file_extension not in ['pdf', 'dwg', 'dxf']:
+        raise HTTPException(status_code=400, detail="Invalid file extension")
     
-    return {"uploaded_drawings": len(uploaded_drawings), "drawings": uploaded_drawings}
+    file_content = await file.read()
+    
+    drawing = Drawing(
+        project_id=project_id,
+        filename=file.filename,
+        file_type=file_extension,
+        file_size=len(file_content),
+        file_data=file_content,
+        status=DrawingStatus.UPLOADED
+    )
+    
+    db.create_drawing(drawing)
+    
+    try:
+        processor = DrawingProcessor()
+        processed_data = processor.process_drawing(drawing)
+        
+        drawing.status = DrawingStatus.PROCESSED
+        drawing.drawing_type = processed_data.get('drawing_type', 'unknown')
+        drawing.scale = processed_data.get('scale')
+        drawing.revision = processed_data.get('revision')
+        drawing.title = processed_data.get('title')
+        
+        db.update_drawing(drawing)
+        
+    except Exception as e:
+        print(f"Processing failed for {file.filename}: {e}")
+        drawing.status = DrawingStatus.FAILED
+        db.update_drawing(drawing)
+    
+    return DrawingResponse(
+        id=drawing.id,
+        filename=drawing.filename,
+        file_type=drawing.file_type,
+        file_size=drawing.file_size,
+        status=drawing.status.value,
+        drawing_type=drawing.drawing_type,
+        scale=drawing.scale,
+        revision=drawing.revision,
+        title=drawing.title,
+        uploaded_at=drawing.uploaded_at,
+        processed_at=drawing.processed_at
+    )
 
 @app.post("/projects/{project_id}/generate-boq")
 async def generate_boq(
@@ -267,6 +266,22 @@ async def generate_boq(
     db.update_project(project)
     
     return {"generated_items": len(boq_items), "boq_items": boq_items}
+
+@app.get("/projects/{project_id}/drawings")
+async def get_project_drawings(
+    project_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Get drawings for a project"""
+    project = db.get_project(project_id)
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    if current_user.role == "client" and project.client_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    drawings = db.get_drawings_by_project(project_id)
+    return drawings
 
 @app.get("/projects/{project_id}/boq", response_model=List[BOQItemResponse])
 async def get_boq(project_id: str, current_user: User = Depends(get_current_user)):

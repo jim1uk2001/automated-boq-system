@@ -65,11 +65,30 @@ export function ProjectPage() {
     }
   }
 
+
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files
     if (!files || files.length === 0) return
 
+    const validTypes = ['.pdf', '.dwg', '.dxf']
+    const invalidFiles = Array.from(files).filter(file => 
+      !validTypes.some(type => file.name.toLowerCase().endsWith(type))
+    )
+    
+    if (invalidFiles.length > 0) {
+      toast.error(`❌ Invalid file types detected. Please upload only PDF, DWG, or DXF files.`)
+      return
+    }
+
+    const oversizedFiles = Array.from(files).filter(file => file.size > 50 * 1024 * 1024)
+    if (oversizedFiles.length > 0) {
+      toast.error(`❌ Some files are too large. Maximum file size is 50MB per file.`)
+      return
+    }
+
     setUploading(true)
+    toast(`📤 Uploading ${files.length} drawing file(s)...`)
+
     const uploadPromises = Array.from(files).map(async (file) => {
       const formData = new FormData()
       formData.append('file', file)
@@ -84,7 +103,7 @@ export function ProjectPage() {
         )
         return response.data
       } catch (error) {
-        toast.error(`Failed to upload ${file.name}`)
+        toast.error(`❌ Failed to upload ${file.name}. Please check the file and try again.`)
         return null
       }
     })
@@ -94,7 +113,8 @@ export function ProjectPage() {
     
     if (successfulUploads.length > 0) {
       setDrawings([...drawings, ...successfulUploads])
-      toast.success(`Successfully uploaded ${successfulUploads.length} file(s)`)
+      toast.success(`✅ Successfully uploaded ${successfulUploads.length} drawing file(s)! Processing will begin automatically.`)
+      setTimeout(fetchProjectData, 2000)
     }
     
     setUploading(false)
@@ -198,29 +218,79 @@ export function ProjectPage() {
       {activeTab === 'drawings' && (
         <div className="space-y-6">
           <div className="bg-white p-6 rounded-lg shadow-md">
-            <h2 className="text-xl font-semibold mb-4">Upload Drawings</h2>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Select PDF or AutoCAD files (.pdf, .dwg, .dxf)
-                </label>
-                <input
-                  type="file"
-                  multiple
-                  accept=".pdf,.dwg,.dxf"
-                  onChange={handleFileUpload}
-                  disabled={uploading}
-                  className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                />
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">📁 Construction Drawings Upload</h2>
+              <p className="text-gray-600">Upload your project drawings to automatically generate Bill of Quantities</p>
+            </div>
+            
+            <div className="space-y-6">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <h3 className="font-semibold text-blue-900 mb-2">📋 Before You Start:</h3>
+                <ul className="text-sm text-blue-800 space-y-1">
+                  <li>• <strong>Accepted file types:</strong> PDF, AutoCAD DWG, AutoCAD DXF</li>
+                  <li>• <strong>Upload method:</strong> You can select one file or multiple files at once</li>
+                  <li>• <strong>File requirements:</strong> Ensure drawings include dimensions and revision numbers</li>
+                  <li>• <strong>File size limit:</strong> Maximum 50MB per file</li>
+                </ul>
               </div>
+
+              <div className="border-2 border-dashed border-blue-300 rounded-lg p-8 bg-blue-50 hover:bg-blue-100 transition-colors">
+                <div className="text-center">
+                  <div className="mb-4">
+                    <svg className="mx-auto h-16 w-16 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
+                  </div>
+                  <label htmlFor="file-upload" className="cursor-pointer">
+                    <span className="text-xl font-bold text-gray-900 block mb-2">
+                      📂 Click Here to Select Drawing Files
+                    </span>
+                    <span className="text-lg text-gray-700 block mb-3">
+                      Choose single file or multiple files at once
+                    </span>
+                    <span className="inline-block bg-white text-gray-600 px-4 py-2 rounded-full text-sm font-medium">
+                      Supports: PDF • DWG • DXF files
+                    </span>
+                  </label>
+                  <input
+                    id="file-upload"
+                    type="file"
+                    multiple
+                    accept=".pdf,.dwg,.dxf"
+                    onChange={handleFileUpload}
+                    disabled={uploading}
+                    className="hidden"
+                  />
+                </div>
+              </div>
+
+              {uploading && (
+                <div className="bg-white border rounded-lg p-4">
+                  <div className="flex items-center justify-center space-x-2">
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                    <span className="text-gray-700 font-medium">Uploading files...</span>
+                  </div>
+                </div>
+              )}
+
               {drawings.length > 0 && (
-                <div className="flex space-x-3">
-                  <button
-                    onClick={processDrawings}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md font-medium"
-                  >
-                    Process All Drawings
-                  </button>
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-green-800 font-semibold">
+                        ✅ {drawings.length} drawing file(s) uploaded successfully
+                      </p>
+                      <p className="text-sm text-green-700 mt-1">
+                        Ready to process drawings and generate BOQ
+                      </p>
+                    </div>
+                    <button
+                      onClick={processDrawings}
+                      className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold text-lg shadow-md"
+                    >
+                      🔄 Process All Drawings
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
@@ -228,7 +298,14 @@ export function ProjectPage() {
 
           <div className="bg-white rounded-lg shadow-md overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-200">
-              <h3 className="text-lg font-medium">Uploaded Drawings ({drawings.length})</h3>
+              <h3 className="text-lg font-bold text-gray-900">📋 Your Uploaded Drawings ({drawings.length})</h3>
+              {drawings.length > 0 && (
+                <p className="text-sm text-gray-600 mt-1">
+                  ✅ {drawings.filter(d => d.status === 'processed').length} processed • 
+                  ⏳ {drawings.filter(d => d.status === 'processing').length} processing • 
+                  ❌ {drawings.filter(d => d.status === 'failed').length} failed
+                </p>
+              )}
             </div>
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
@@ -264,13 +341,16 @@ export function ProjectPage() {
                         {drawing.drawing_type || 'Not classified'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                        <span className={`px-3 py-1 inline-flex text-sm font-semibold rounded-full ${
                           drawing.status === 'processed' ? 'bg-green-100 text-green-800' :
                           drawing.status === 'processing' ? 'bg-yellow-100 text-yellow-800' :
                           drawing.status === 'failed' ? 'bg-red-100 text-red-800' :
                           'bg-gray-100 text-gray-800'
                         }`}>
-                          {drawing.status}
+                          {drawing.status === 'processed' ? '✅ Ready' :
+                           drawing.status === 'processing' ? '⏳ Processing' :
+                           drawing.status === 'failed' ? '❌ Failed' :
+                           drawing.status}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -288,20 +368,24 @@ export function ProjectPage() {
       {activeTab === 'boq' && (
         <div className="space-y-6">
           <div className="flex justify-between items-center">
-            <h2 className="text-xl font-semibold">Bill of Quantities</h2>
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900">📊 Bill of Quantities (BOQ)</h2>
+              <p className="text-gray-600 mt-1">Generate professional BOQ from your uploaded drawings</p>
+            </div>
             <div className="flex space-x-3">
               <button
                 onClick={generateBOQ}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md font-medium"
+                disabled={drawings.length === 0}
+                className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-6 py-3 rounded-lg font-semibold text-lg shadow-md"
               >
-                Generate BOQ
+                {drawings.length === 0 ? '📋 Upload Drawings First' : '🔄 Generate BOQ'}
               </button>
               {boqItems.length > 0 && (
                 <button
                   onClick={downloadBOQExcel}
-                  className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md font-medium"
+                  className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold text-lg shadow-md"
                 >
-                  Download Excel
+                  📊 Download Excel
                 </button>
               )}
             </div>
@@ -356,8 +440,11 @@ export function ProjectPage() {
 
           {boqItems.length === 0 && (
             <div className="text-center py-12">
-              <div className="text-gray-400 text-lg mb-2">No BOQ items yet</div>
-              <p className="text-gray-500">Process drawings and generate BOQ to see items here</p>
+              <div className="text-gray-400 text-xl mb-3">📋 No BOQ items yet</div>
+              <p className="text-gray-500 text-lg">Upload drawings and generate BOQ to see quantities here</p>
+              {drawings.length === 0 && (
+                <p className="text-blue-600 mt-2 font-medium">👆 Start by uploading your construction drawings above</p>
+              )}
             </div>
           )}
         </div>
