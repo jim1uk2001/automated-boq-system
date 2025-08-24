@@ -9,7 +9,7 @@ from .models import User
 
 SECRET_KEY = "bojim-boq-secret-key-2024"  # In production, use environment variable
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+ACCESS_TOKEN_EXPIRE_MINUTES = 480  # 8 hours for development
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 security = HTTPBearer()
@@ -36,12 +36,16 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
 def verify_token(token: str) -> Optional[str]:
     """Verify a JWT token and return user ID"""
     try:
+        print(f"DEBUG: Verifying token with SECRET_KEY: {SECRET_KEY[:10]}...")
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        print(f"DEBUG: Token payload: {payload}")
         user_id: str = payload.get("sub")
         if user_id is None:
+            print("DEBUG: No 'sub' field in token payload")
             return None
         return user_id
-    except JWTError:
+    except JWTError as e:
+        print(f"DEBUG: JWT verification error: {e}")
         return None
 
 def authenticate_user(email: str, password: str) -> Optional[User]:
@@ -61,12 +65,19 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
         headers={"WWW-Authenticate": "Bearer"},
     )
     
+    print(f"DEBUG: Received token: {credentials.credentials[:50]}...")
     user_id = verify_token(credentials.credentials)
+    print(f"DEBUG: Token verification result: {user_id}")
+    
     if user_id is None:
+        print("DEBUG: Token verification failed")
         raise credentials_exception
     
     user = db.get_user(user_id)
+    print(f"DEBUG: User lookup result: {user.email if user else 'None'}")
+    
     if user is None:
+        print("DEBUG: User not found in database")
         raise credentials_exception
     
     return user

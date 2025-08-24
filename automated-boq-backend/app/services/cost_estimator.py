@@ -76,8 +76,8 @@ class CostEstimator:
         total_cost = total_hours * hourly_rate_converted
         
         breakdown = {
-            "drawing_processing_hours": drawing_hours,
-            "boq_generation_hours": boq_hours,
+            "manual_drawing_hours": drawing_hours,
+            "manual_boq_hours": boq_hours,
             "setup_hours": setup_hours,
             "standard_multiplier": standard_multiplier,
             "total_hours": total_hours,
@@ -88,8 +88,8 @@ class CostEstimator:
             "exchange_rate": exchange_rate,
             "total_cost": total_cost,
             "cost_breakdown": {
-                "drawing_processing": drawing_hours * hourly_rate_converted * standard_multiplier,
-                "boq_generation": boq_hours * hourly_rate_converted * standard_multiplier,
+                "manual_drawing_analysis": drawing_hours * hourly_rate_converted * standard_multiplier,
+                "manual_boq_preparation": boq_hours * hourly_rate_converted * standard_multiplier,
                 "project_setup": setup_hours * hourly_rate_converted
             }
         }
@@ -142,24 +142,25 @@ class CostEstimator:
         
         report = f"""
 BOJIM BOQ PRODUCTION SOFTWARE - COST ESTIMATE
+(Based on Manual Quantity Surveying Equivalent)
 
 Project: {project.name}
 Measurement Standard: {project.measurement_standard.value.upper()}
 Currency: {estimate['currency']}
 Date: {project.created_at.strftime('%Y-%m-%d')}
 
-DRAWING ANALYSIS:
+MANUAL DRAWING ANALYSIS EQUIVALENT:
 - Number of drawings: {len(project.drawings)}
-- Processing hours: {estimate['drawing_processing_hours']:.2f}
-- Cost: {currency_symbol}{estimate['cost_breakdown']['drawing_processing']:.2f}
+- Manual analysis hours: {estimate['manual_drawing_hours']:.2f}
+- Cost: {currency_symbol}{estimate['cost_breakdown']['manual_drawing_analysis']:.2f}
 
-BOQ GENERATION:
+MANUAL BOQ PREPARATION EQUIVALENT:
 - Number of items: {len(project.boq_items)}
-- Generation hours: {estimate['boq_generation_hours']:.2f}
-- Cost: {currency_symbol}{estimate['cost_breakdown']['boq_generation']:.2f}
+- Manual measurement hours: {estimate['manual_boq_hours']:.2f}
+- Cost: {currency_symbol}{estimate['cost_breakdown']['manual_boq_preparation']:.2f}
 
-PROJECT SETUP:
-- Setup hours: {estimate['setup_hours']:.2f}
+PROJECT SETUP & COORDINATION:
+- Setup & calibration hours: {estimate['setup_hours']:.2f}
 - Cost: {currency_symbol}{estimate['cost_breakdown']['project_setup']:.2f}
 
 COMPLEXITY ADJUSTMENT:
@@ -172,12 +173,12 @@ CURRENCY CONVERSION:
 - Converted rate: {currency_symbol}{estimate['hourly_rate']:.2f} {estimate['currency']}
 
 TOTAL ESTIMATE:
-- Total hours: {estimate['total_hours']:.2f}
-- Hourly rate: {currency_symbol}{estimate['hourly_rate']:.2f}
+- Total manual equivalent hours: {estimate['total_hours']:.2f}
+- Professional hourly rate: {currency_symbol}{estimate['hourly_rate']:.2f}
 - TOTAL COST: {currency_symbol}{estimate['total_cost']:.2f}
 
-This estimate uses advanced digitized algorithms for accurate project costing.
-Includes drawing processing, quantity takeoff, and BOQ generation.
+This estimate reflects the market rate for manual quantity surveying work.
+Competitive pricing based on traditional methods while delivering faster results.
 Supports multiple currencies: GBP (UK), USD (US), EUR (Ireland), AED (UAE).
 """
         return report

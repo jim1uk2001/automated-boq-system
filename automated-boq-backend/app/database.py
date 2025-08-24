@@ -21,20 +21,25 @@ class InMemoryDatabase:
     def _ensure_sample_data(self):
         """Create sample users for testing if not already created"""
         if self._sample_data_created:
+            print(f"DEBUG: Sample data already created, {len(self.users)} users in database")
             return
             
+        print("DEBUG: Creating sample data...")
         from .auth import get_password_hash
         
         client = User(
+            id="bf4881b9-f7bd-4307-bd77-ad46cdd4ef6b",  # Fixed ID to match existing tokens
             email="mcguirejim@yahoo.com",
             name="Jim McGuire",
             password=get_password_hash("password123"),
             role="client",
             company="ABC Construction Ltd"
         )
+        print(f"DEBUG: Created client user with ID: {client.id}")
         self.users[client.id] = client
         
         contractor1 = User(
+            id="contractor1-fixed-id-12345",  # Fixed ID
             email="contractor1@example.com",
             name="Mike Builder",
             password=get_password_hash("password123"),
@@ -44,6 +49,7 @@ class InMemoryDatabase:
         self.users[contractor1.id] = contractor1
         
         contractor2 = User(
+            id="contractor2-fixed-id-67890",  # Fixed ID
             email="contractor2@example.com",
             name="Sarah Constructor",
             password=get_password_hash("password123"),
@@ -53,12 +59,16 @@ class InMemoryDatabase:
         self.users[contractor2.id] = contractor2
         
         self._sample_data_created = True
+        print(f"DEBUG: Sample data creation complete. Total users: {len(self.users)}")
+        for user_id, user in self.users.items():
+            print(f"DEBUG: User {user_id}: {user.email} ({user.role})")
     
     def create_user(self, user: User) -> User:
         self.users[user.id] = user
         return user
     
     def get_user(self, user_id: str) -> Optional[User]:
+        self._ensure_sample_data()
         return self.users.get(user_id)
     
     def get_user_by_email(self, email: str) -> Optional[User]:

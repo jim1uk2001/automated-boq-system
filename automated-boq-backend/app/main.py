@@ -201,7 +201,7 @@ async def upload_drawings_single(
     
     try:
         processor = DrawingProcessor()
-        processed_data = processor.process_drawing(drawing)
+        processed_data = await processor.process_drawing(drawing, drawing.file_data)
         
         drawing.status = DrawingStatus.PROCESSED
         drawing.drawing_type = processed_data.get('drawing_type', 'unknown')
@@ -218,16 +218,21 @@ async def upload_drawings_single(
     
     return DrawingResponse(
         id=drawing.id,
+        project_id=drawing.project_id,
         filename=drawing.filename,
         file_type=drawing.file_type,
-        file_size=drawing.file_size,
-        status=drawing.status.value,
         drawing_type=drawing.drawing_type,
         scale=drawing.scale,
-        revision=drawing.revision,
-        title=drawing.title,
+        processed=drawing.status == DrawingStatus.PROCESSED,
+        processing_status=drawing.status.value,
+        error_message=drawing.error_message,
         uploaded_at=drawing.uploaded_at,
-        processed_at=drawing.processed_at
+        processed_at=drawing.processed_at,
+        drawing_title=drawing.title,
+        revision_number=drawing.revision,
+        quality_score=drawing.quality_score,
+        architect_queries=drawing.architect_queries,
+        quality_issues=drawing.quality_issues
     )
 
 @app.post("/projects/{project_id}/generate-boq")
@@ -471,12 +476,12 @@ async def get_cost_estimate(
         estimate_report=report
     )
 
-@app.post("/projects/{project_id}/quick-estimate")
+@app.get("/projects/{project_id}/quick-estimate")
 async def quick_estimate_from_drawings(
     project_id: str,
-    hourly_rate: Optional[float] = 45.0,
+    hourly_rate: Optional[float] = Query(45.0, description="Hourly rate for cost calculation"),
     currency: Currency = Query(Currency.GBP, description="Currency for cost calculation"),
-    current_user: User = Depends(get_current_client)
+    current_user: User = Depends(get_current_user)
 ):
     """Get quick cost estimate immediately after uploading drawings"""
     project = db.get_project(project_id)
