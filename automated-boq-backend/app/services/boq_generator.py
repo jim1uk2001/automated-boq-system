@@ -17,24 +17,41 @@ class BOQGenerator:
         boq_items = []
         rules = self.measurement_standards[standard]
         
+        print(f"DEBUG: BOQ Generator processing {len(drawings_data)} drawings")
+        
         for drawing_data in drawings_data:
             drawing_id = drawing_data.get('drawing_id')
             elements = drawing_data.get('elements', [])
             drawing_type = drawing_data.get('drawing_type')
             
+            print(f"DEBUG: Processing drawing {drawing_id}, type: {drawing_type}, elements: {len(elements)}")
+            
+            if not drawing_type or drawing_type == 'unknown' or drawing_type == 'site':
+                drawing_type = 'architectural'
+                print(f"DEBUG: Drawing type '{drawing_data.get('drawing_type')}' converted to architectural")
+            
             if drawing_type == 'architectural':
-                boq_items.extend(self._process_architectural_elements(
+                items = self._process_architectural_elements(
                     project_id, drawing_id, elements, rules
-                ))
+                )
+                print(f"DEBUG: Architectural processing generated {len(items)} items")
+                boq_items.extend(items)
             elif drawing_type == 'structural':
-                boq_items.extend(self._process_structural_elements(
+                items = self._process_structural_elements(
                     project_id, drawing_id, elements, rules
-                ))
+                )
+                print(f"DEBUG: Structural processing generated {len(items)} items")
+                boq_items.extend(items)
             elif drawing_type == 'mep':
-                boq_items.extend(self._process_mep_elements(
+                items = self._process_mep_elements(
                     project_id, drawing_id, elements, rules
-                ))
+                )
+                print(f"DEBUG: MEP processing generated {len(items)} items")
+                boq_items.extend(items)
+            else:
+                print(f"DEBUG: Unknown drawing type '{drawing_type}', skipping")
         
+        print(f"DEBUG: Total BOQ items generated: {len(boq_items)}")
         return boq_items
 
     def _process_architectural_elements(self, project_id: str, drawing_id: str, 
@@ -42,11 +59,20 @@ class BOQGenerator:
         """Process architectural elements into BOQ items"""
         boq_items = []
         
+        element_types = {}
+        for e in elements:
+            elem_type = e.get('type', 'unknown')
+            element_types[elem_type] = element_types.get(elem_type, 0) + 1
+        print(f"DEBUG: Element types in drawing: {element_types}")
+        
         walls = [e for e in elements if e.get('type') == 'line' and e.get('length', 0) > 100]
         areas = [e for e in elements if e.get('type') in ['polyline', 'rectangle'] and e.get('area', 0) > 0]
         
+        print(f"DEBUG: Found {len(walls)} potential walls (lines > 100), {len(areas)} potential areas")
+        
         if walls:
             total_wall_length = sum(wall.get('length', 0) for wall in walls)
+            print(f"DEBUG: Total wall length: {total_wall_length}")
             if total_wall_length > 0:
                 boq_items.append(BOQItem(
                     project_id=project_id,
@@ -62,6 +88,7 @@ class BOQGenerator:
         
         if areas:
             total_floor_area = sum(area.get('area', 0) for area in areas)
+            print(f"DEBUG: Total floor area: {total_floor_area}")
             if total_floor_area > 0:
                 boq_items.append(BOQItem(
                     project_id=project_id,
@@ -75,6 +102,25 @@ class BOQGenerator:
                     measurement_standard=MeasurementStandard.SMM7
                 ))
         
+        if not boq_items and elements:
+            all_lines = [e for e in elements if e.get('type') == 'line']
+            if all_lines:
+                total_length = sum(line.get('length', 0) for line in all_lines)
+                print(f"DEBUG: Creating general construction item from {len(all_lines)} lines, total length: {total_length}")
+                if total_length > 0:
+                    boq_items.append(BOQItem(
+                        project_id=project_id,
+                        drawing_id=drawing_id,
+                        item_code="GENERAL.1",
+                        description="General construction work based on drawing elements",
+                        unit="m",
+                        quantity=round(total_length / 1000, 2),
+                        category="general",
+                        trade="civil",
+                        measurement_standard=MeasurementStandard.SMM7
+                    ))
+        
+        print(f"DEBUG: Architectural processing created {len(boq_items)} BOQ items")
         return boq_items
 
     def _process_structural_elements(self, project_id: str, drawing_id: str, 
