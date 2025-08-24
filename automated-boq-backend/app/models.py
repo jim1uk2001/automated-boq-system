@@ -35,6 +35,7 @@ class User(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     email: str
     name: str
+    password: str
     role: str  # "client", "contractor", "admin"
     company: Optional[str] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)

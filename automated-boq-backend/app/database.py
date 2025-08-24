@@ -16,14 +16,19 @@ class InMemoryDatabase:
         self.trade_packages: Dict[str, TradePackage] = {}
         self.trade_bids: Dict[str, TradeBid] = {}
         self.scheduled_emails: Dict[str, ScheduledEmail] = {}
-        
-        self._create_sample_data()
+        self._sample_data_created = False
     
-    def _create_sample_data(self):
-        """Create sample users for testing"""
+    def _ensure_sample_data(self):
+        """Create sample users for testing if not already created"""
+        if self._sample_data_created:
+            return
+            
+        from .auth import get_password_hash
+        
         client = User(
-            email="client@example.com",
-            name="John Client",
+            email="mcguirejim@yahoo.com",
+            name="Jim McGuire",
+            password=get_password_hash("password123"),
             role="client",
             company="ABC Construction Ltd"
         )
@@ -32,6 +37,7 @@ class InMemoryDatabase:
         contractor1 = User(
             email="contractor1@example.com",
             name="Mike Builder",
+            password=get_password_hash("password123"),
             role="contractor",
             company="BuildCorp Ltd"
         )
@@ -40,10 +46,13 @@ class InMemoryDatabase:
         contractor2 = User(
             email="contractor2@example.com",
             name="Sarah Constructor",
+            password=get_password_hash("password123"),
             role="contractor",
             company="ConstructCo Inc"
         )
         self.users[contractor2.id] = contractor2
+        
+        self._sample_data_created = True
     
     def create_user(self, user: User) -> User:
         self.users[user.id] = user
@@ -53,6 +62,7 @@ class InMemoryDatabase:
         return self.users.get(user_id)
     
     def get_user_by_email(self, email: str) -> Optional[User]:
+        self._ensure_sample_data()
         for user in self.users.values():
             if user.email == email:
                 return user

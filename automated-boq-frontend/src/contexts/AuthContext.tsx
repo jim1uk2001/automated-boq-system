@@ -36,28 +36,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const token = localStorage.getItem('token')
-    if (token) {
+    const userData = localStorage.getItem('user')
+    if (token && userData) {
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
-      axios.get(`${API_URL}/projects`)
-        .then(() => {
-          setUser({
-            id: '1',
-            email: 'client@example.com',
-            name: 'John Client',
-            role: 'client',
-            company: 'ABC Construction Ltd'
-          })
-        })
-        .catch(() => {
-          localStorage.removeItem('token')
-          delete axios.defaults.headers.common['Authorization']
-        })
-        .finally(() => {
-          setLoading(false)
-        })
-    } else {
-      setLoading(false)
+      try {
+        setUser(JSON.parse(userData))
+      } catch (error) {
+        localStorage.removeItem('token')
+        localStorage.removeItem('user')
+        delete axios.defaults.headers.common['Authorization']
+      }
     }
+    setLoading(false)
   }, [])
 
   const login = async (email: string, password: string): Promise<boolean> => {
@@ -74,6 +64,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       const { access_token, user: userData } = response.data
       localStorage.setItem('token', access_token)
+      localStorage.setItem('user', JSON.stringify(userData))
       axios.defaults.headers.common['Authorization'] = `Bearer ${access_token}`
       setUser(userData)
       toast.success('Login successful!')
@@ -113,6 +104,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = () => {
     localStorage.removeItem('token')
+    localStorage.removeItem('user')
     delete axios.defaults.headers.common['Authorization']
     setUser(null)
     toast.success('Logged out successfully')

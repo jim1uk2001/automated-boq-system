@@ -62,16 +62,13 @@ async def healthz():
 @app.post("/auth/login")
 async def login(email: str = Form(...), password: str = Form(...)):
     """Login endpoint"""
-    user = db.get_user_by_email(email)
+    user = authenticate_user(email, password)
     if not user:
-        role = "client" if "client" in email else "contractor"
-        user = User(
-            email=email,
-            name=email.split("@")[0].title(),
-            role=role,
-            company=f"{role.title()} Company"
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect email or password",
+            headers={"WWW-Authenticate": "Bearer"},
         )
-        db.create_user(user)
     
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
@@ -89,6 +86,7 @@ async def register(user_data: UserCreate):
     user = User(
         email=user_data.email,
         name=user_data.name,
+        password=get_password_hash(user_data.password),
         role=user_data.role,
         company=user_data.company
     )
