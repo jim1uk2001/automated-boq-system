@@ -3,6 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from typing import List, Optional
 import io
+import os
+import uuid
 from datetime import datetime, timedelta
 
 from .models import *
@@ -13,7 +15,7 @@ from .schemas import (
     TradePackageResponse, TradePackageDetailResponse,
     ScheduleEmailRequest, ScheduledEmailResponse, EmailPreviewResponse, EmailApprovalRequest
 )
-from .database import db
+from .database import db, get_db
 from .auth import *
 from .services.drawing_processor import DrawingProcessor
 from .services.boq_generator import BOQGenerator
@@ -164,6 +166,48 @@ async def get_project(project_id: str, current_user: User = Depends(get_current_
         drawings_count=len(db.get_drawings_by_project(project.id)),
         boq_items_count=len(db.get_boq_items_by_project(project.id))
     )
+@app.post("/upload-drawing")
+async def upload_drawing(
+    file: UploadFile = File(...),
+    project_id: str = Form(...),
+    db = Depends(get_db)
+):
+    try:
+        project = db.get_project(project_id)
+        if not project:
+            raise HTTPException(status_code=404, detail="Project not found")
+        
+        file_content = await file.read()
+        
+        if len(file_content) > 50 * 1024 * 1024:
+            raise HTTPException(status_code=413, detail="File too large. Maximum size is 50MB.")
+        
+        valid_types = ['application/pdf', 'image/vnd.dwg', 'application/acad', 'application/x-autocad', 'application/x-dwg', 'application/dwg', 'image/x-dwg', 'application/dxf', 'image/vnd.dxf']
+        valid_extensions = ['.pdf', '.dwg', '.dxf']
+        
+        file_extension = os.path.splitext(file.filename)[1].lower()
+        if file.content_type not in valid_types and file_extension not in valid_extensions:
+            raise HTTPException(status_code=400, detail="Invalid file type. Only PDF, DWG, and DXF files are allowed.")
+        
+        drawing = Drawing(
+            id=str(uuid.uuid4()),
+            project_id=project_id,
+            filename=file.filename,
+            file_type=file_extension[1:] if file_extension else 'unknown',
+            file_size=len(file_content),
+            file_content=file_content,
+            processing_status="uploaded"
+        )
+        
+        db.create_drawing(drawing)
+        
+        return {"message": "Drawing uploaded successfully", "drawing_id": drawing.id}
+        
+    except Exception as e:
+        print(f"Error uploading drawing: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to upload drawing: {str(e)}")
+
+
 
 @app.post("/projects/{project_id}/drawings/upload")
 async def upload_drawings_single(
@@ -171,69 +215,103 @@ async def upload_drawings_single(
     file: UploadFile = File(...),
     current_user: User = Depends(get_current_user)
 ):
-    """Upload a single drawing for a project"""
-    project = db.get_project(project_id)
-    if not project:
-        raise HTTPException(status_code=404, detail="Project not found")
-    
-    if current_user.role == "client" and project.client_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Not authorized")
-    
-    if file.content_type not in ["application/pdf", "application/octet-stream"]:
-        raise HTTPException(status_code=400, detail="Invalid file type")
-        
-    file_extension = file.filename.split('.')[-1].lower()
-    if file_extension not in ['pdf', 'dwg', 'dxf']:
-        raise HTTPException(status_code=400, detail="Invalid file extension")
-    
-    file_content = await file.read()
-    
-    drawing = Drawing(
-        project_id=project_id,
-        filename=file.filename,
-        file_type=file_extension,
-        file_size=len(file_content),
-        file_data=file_content,
-        status=DrawingStatus.UPLOADED
-    )
-    
-    db.create_drawing(drawing)
-    
+    """Upload a single drawing file"""
     try:
-        processor = DrawingProcessor()
-        processed_data = await processor.process_drawing(drawing, drawing.file_data)
+        print(f"DEBUG: Upload request for project {project_id} by user {current_user.id}")
+        print(f"DEBUG: File details - name: {file.filename}, type: {file.content_type}")
         
-        drawing.status = DrawingStatus.PROCESSED
-        drawing.drawing_type = processed_data.get('drawing_type', 'unknown')
-        drawing.scale = processed_data.get('scale')
-        drawing.revision = processed_data.get('revision')
-        drawing.title = processed_data.get('title')
+        allowed_extensions = ['.pdf', '.dwg', '.dxf']
+        file_extension = os.path.splitext(file.filename or '')[1].lower()
         
-        db.update_drawing(drawing)
+        if file_extension not in allowed_extensions:
+            print(f"DEBUG: Invalid file extension: {file_extension}")
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid file type. Allowed types: {', '.join(allowed_extensions)}"
+            )
         
+        project = db.get_project(project_id)
+        if not project:
+            print(f"DEBUG: Project not found: {project_id}")
+            raise HTTPException(status_code=404, detail="Project not found")
+        
+        if project.client_id != current_user.id:
+            print(f"DEBUG: Access denied - project client: {project.client_id}, user: {current_user.id}")
+            raise HTTPException(status_code=403, detail="Access denied")
+        
+        content = await file.read()
+        file_size = len(content)
+        print(f"DEBUG: Read {file_size} bytes from file")
+        
+        if file_size > 50 * 1024 * 1024:
+            print(f"DEBUG: File too large: {file_size} bytes")
+            raise HTTPException(
+                status_code=400,
+                detail="File size exceeds 50MB limit"
+            )
+        
+        drawing = Drawing(
+            id=str(uuid.uuid4()),
+            project_id=project_id,
+            filename=file.filename or "unknown",
+            file_type=file_extension[1:],  # Remove the dot
+            file_size=file_size,
+            file_data=content,
+            uploaded_at=datetime.utcnow(),
+            status=DrawingStatus.UPLOADED
+        )
+        
+        db.create_drawing(drawing)
+        
+        try:
+            processor = DrawingProcessor()
+            processed_data = await processor.process_drawing(drawing, drawing.file_data)
+            
+            drawing.status = DrawingStatus.PROCESSED
+            drawing.drawing_type = processed_data.get('drawing_type', 'unknown')
+            drawing.scale = processed_data.get('scale')
+            drawing.revision = processed_data.get('revision')
+            drawing.title = processed_data.get('title')
+            drawing.processed_data = processed_data  # Store the complete processed data
+            drawing.processed_at = datetime.utcnow()
+            
+            db.update_drawing(drawing)
+            
+        except Exception as e:
+            print(f"Processing failed for {file.filename}: {e}")
+            drawing.status = DrawingStatus.FAILED
+            db.update_drawing(drawing)
+        
+        return DrawingResponse(
+            id=drawing.id,
+            project_id=drawing.project_id,
+            filename=drawing.filename,
+            file_type=drawing.file_type,
+            drawing_type=drawing.drawing_type,
+            scale=drawing.scale,
+            processed=drawing.status == DrawingStatus.PROCESSED,
+            processing_status=drawing.status.value,
+            error_message=drawing.error_message,
+            uploaded_at=drawing.uploaded_at,
+            processed_at=drawing.processed_at,
+            drawing_title=drawing.title,
+            revision_number=drawing.revision,
+            quality_score=drawing.quality_score,
+            architect_queries=drawing.architect_queries,
+            quality_issues=drawing.quality_issues
+        )
+        
+    except HTTPException:
+        raise
     except Exception as e:
-        print(f"Processing failed for {file.filename}: {e}")
-        drawing.status = DrawingStatus.FAILED
-        db.update_drawing(drawing)
-    
-    return DrawingResponse(
-        id=drawing.id,
-        project_id=drawing.project_id,
-        filename=drawing.filename,
-        file_type=drawing.file_type,
-        drawing_type=drawing.drawing_type,
-        scale=drawing.scale,
-        processed=drawing.status == DrawingStatus.PROCESSED,
-        processing_status=drawing.status.value,
-        error_message=drawing.error_message,
-        uploaded_at=drawing.uploaded_at,
-        processed_at=drawing.processed_at,
-        drawing_title=drawing.title,
-        revision_number=drawing.revision,
-        quality_score=drawing.quality_score,
-        architect_queries=drawing.architect_queries,
-        quality_issues=drawing.quality_issues
-    )
+        print(f"DEBUG: Upload error: {str(e)}")
+        print(f"DEBUG: Error type: {type(e)}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to upload drawing: {str(e)}"
+        )
 
 @app.post("/projects/{project_id}/generate-boq")
 async def generate_boq(
@@ -246,24 +324,36 @@ async def generate_boq(
         raise HTTPException(status_code=404, detail="Project not found")
     
     drawings = db.get_drawings_by_project(project_id)
-    processed_drawings = [d for d in drawings if d.processed and d.processing_status == "completed"]
+    processed_drawings = [d for d in drawings if d.status == DrawingStatus.PROCESSED]
     
     if not processed_drawings:
         raise HTTPException(status_code=400, detail="No processed drawings found")
     
     drawings_data = []
     for drawing in processed_drawings:
+        processed_data = drawing.processed_data or {}
+        elements = processed_data.get('elements', [])
+        dimensions = processed_data.get('dimensions', [])
+        text_annotations = processed_data.get('text_annotations', [])
+        
+        print(f"DEBUG: Drawing {drawing.filename} processed_data keys: {list(processed_data.keys())}")
+        print(f"DEBUG: Elements count: {len(elements)}, Dimensions count: {len(dimensions)}, Text annotations count: {len(text_annotations)}")
+        if elements:
+            print(f"DEBUG: First few elements: {elements[:3]}")
+        
         drawings_data.append({
             "drawing_id": drawing.id,
             "drawing_type": drawing.drawing_type.value if drawing.drawing_type else "architectural",
-            "elements": [],  # Would contain actual processed elements
-            "dimensions": [],
-            "text_annotations": []
+            "elements": elements,
+            "dimensions": dimensions,
+            "text_annotations": text_annotations
         })
     
+    print(f"DEBUG: Total drawings_data prepared: {len(drawings_data)}")
     boq_items = await boq_generator.generate_boq(
         project_id, drawings_data, project.measurement_standard
     )
+    print(f"DEBUG: BOQ items generated: {len(boq_items)}")
     
     db.bulk_create_boq_items(boq_items)
     
@@ -302,12 +392,13 @@ async def get_boq(project_id: str, current_user: User = Depends(get_current_user
     boq_items = db.get_boq_items_by_project(project_id)
     return boq_items
 
-@app.get("/projects/{project_id}/boq/excel")
-async def download_boq_excel(
+@app.get("/projects/{project_id}/boq/download")
+async def download_boq(
     project_id: str,
+    format: str = "excel",
     current_user: User = Depends(get_current_user)
 ):
-    """Download BOQ as Excel file"""
+    """Download BOQ as Excel or PDF file"""
     project = db.get_project(project_id)
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
@@ -316,13 +407,28 @@ async def download_boq_excel(
     if not boq_items:
         raise HTTPException(status_code=404, detail="No BOQ items found")
     
-    excel_data = excel_generator.generate_boq_excel(project, boq_items)
-    
-    return StreamingResponse(
-        io.BytesIO(excel_data),
-        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        headers={"Content-Disposition": f"attachment; filename=BOQ_{project.name.replace(' ', '_')}.xlsx"}
-    )
+    if format.lower() == "pdf":
+        drawings = db.get_drawings_by_project(project_id)
+        pdf_data = excel_generator.generate_boq_pdf(
+            [item.__dict__ for item in boq_items],
+            project.name,
+            [drawing.__dict__ for drawing in drawings],
+            project.measurement_standard
+        )
+        
+        return StreamingResponse(
+            io.BytesIO(pdf_data),
+            media_type="application/pdf",
+            headers={"Content-Disposition": f"attachment; filename=BOQ_{project.name.replace(' ', '_')}.pdf"}
+        )
+    else:
+        excel_data = excel_generator.generate_boq_excel(project, boq_items)
+        
+        return StreamingResponse(
+            io.BytesIO(excel_data),
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={"Content-Disposition": f"attachment; filename=BOQ_{project.name.replace(' ', '_')}.xlsx"}
+        )
 
 @app.post("/projects/{project_id}/bids", response_model=BidResponse)
 async def submit_bid(

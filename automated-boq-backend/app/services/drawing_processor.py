@@ -112,38 +112,43 @@ class DrawingProcessor:
             
             for entity in modelspace:
                 if entity.dxftype() == 'LINE':
+                    start = entity.dxf.start
+                    end = entity.dxf.end
                     results['elements'].append({
                         'type': 'line',
-                        'start': entity.dxf.start,
-                        'end': entity.dxf.end,
-                        'length': (entity.dxf.end - entity.dxf.start).magnitude
+                        'start': (float(start.x), float(start.y)),
+                        'end': (float(end.x), float(end.y)),
+                        'length': float((end - start).magnitude)
                     })
                 elif entity.dxftype() == 'CIRCLE':
+                    center = entity.dxf.center
+                    radius = entity.dxf.radius
                     results['elements'].append({
                         'type': 'circle',
-                        'center': entity.dxf.center,
-                        'radius': entity.dxf.radius,
-                        'area': np.pi * entity.dxf.radius ** 2
+                        'center': (float(center.x), float(center.y)),
+                        'radius': float(radius),
+                        'area': float(np.pi * radius ** 2)
                     })
                 elif entity.dxftype() == 'LWPOLYLINE':
-                    points = list(entity.get_points())
+                    points = [(float(p[0]), float(p[1])) for p in entity.get_points()]
                     results['elements'].append({
                         'type': 'polyline',
                         'points': points,
-                        'closed': entity.closed,
-                        'area': self._calculate_polygon_area(points) if entity.closed else 0
+                        'closed': bool(entity.closed),
+                        'area': float(self._calculate_polygon_area(points)) if entity.closed else 0.0
                     })
                 elif entity.dxftype() == 'TEXT':
+                    position = entity.dxf.insert
                     results['text_annotations'].append({
-                        'text': entity.dxf.text,
-                        'position': entity.dxf.insert,
-                        'height': entity.dxf.height
+                        'text': str(entity.dxf.text),
+                        'position': (float(position.x), float(position.y)),
+                        'height': float(entity.dxf.height)
                     })
                 elif entity.dxftype() == 'DIMENSION':
                     results['dimensions'].append({
                         'type': 'dimension',
-                        'measurement': entity.get_measurement(),
-                        'text': entity.dxf.text if hasattr(entity.dxf, 'text') else None
+                        'measurement': float(entity.get_measurement()),
+                        'text': str(entity.dxf.text) if hasattr(entity.dxf, 'text') else None
                     })
             
             results['drawing_type'] = self._classify_autocad_drawing(doc)
@@ -174,9 +179,9 @@ class DrawingProcessor:
                 length = np.sqrt((x2-x1)**2 + (y2-y1)**2)
                 results['elements'].append({
                     'type': 'line',
-                    'start': (x1, y1),
-                    'end': (x2, y2),
-                    'length': length
+                    'start': (int(x1), int(y1)),
+                    'end': (int(x2), int(y2)),
+                    'length': float(length)
                 })
         
         circles = cv2.HoughCircles(gray, cv2.HOUGH_GRADIENT, 1, 20, param1=50, param2=30, minRadius=10, maxRadius=100)
@@ -185,25 +190,26 @@ class DrawingProcessor:
             for (x, y, r) in circles:
                 results['elements'].append({
                     'type': 'circle',
-                    'center': (x, y),
-                    'radius': r,
-                    'area': np.pi * r ** 2
+                    'center': (int(x), int(y)),
+                    'radius': int(r),
+                    'area': float(np.pi * r ** 2)
                 })
         
         try:
             ocr_results = self.easyocr_reader.readtext(image)
             for (bbox, text, confidence) in ocr_results:
                 if confidence > 0.5:  # Filter low confidence results
+                    bbox_converted = [[float(coord[0]), float(coord[1])] for coord in bbox]
                     results['text_annotations'].append({
                         'text': text,
-                        'bbox': bbox,
-                        'confidence': confidence
+                        'bbox': bbox_converted,
+                        'confidence': float(confidence)
                     })
                     
                     if self._is_dimension_text(text):
                         results['dimensions'].append({
                             'text': text,
-                            'bbox': bbox,
+                            'bbox': bbox_converted,
                             'value': self._extract_dimension_value(text)
                         })
         except Exception as e:
