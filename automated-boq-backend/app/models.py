@@ -67,6 +67,9 @@ class Drawing(BaseModel):
     quality_issues: List[str] = []
     processed_data: Optional[Dict[str, Any]] = None  # Store extracted elements, dimensions, text_annotations
     building_types: Optional[Dict[str, Any]] = None  # Store detected building types
+    room_types: Optional[Dict[str, Any]] = None  # Store detected room types
+    wall_finishes: Optional[Dict[str, Any]] = None  # Store detected wall finishes
+    floor_plans: Optional[Dict[str, Any]] = None  # Store detected floor plan indicators
 
 class BOQItem(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))

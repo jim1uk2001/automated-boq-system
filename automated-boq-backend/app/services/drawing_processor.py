@@ -249,6 +249,62 @@ class DrawingProcessor:
                         if class_match:
                             building_types[f"Class {class_match.group(1).upper()} Building"] = bbox_converted
                     
+                    room_types = {}
+                    if re.search(r'kitchen|cook', text_lower):
+                        if "room_types" not in results:
+                            results["room_types"] = {}
+                        results["room_types"]["Kitchen"] = bbox_converted
+                    elif re.search(r'bathroom|bath|wc|toilet|shower', text_lower):
+                        if "room_types" not in results:
+                            results["room_types"] = {}
+                        results["room_types"]["Bathroom"] = bbox_converted
+                    elif re.search(r'bedroom|bed\s+room|sleeping', text_lower):
+                        if "room_types" not in results:
+                            results["room_types"] = {}
+                        results["room_types"]["Bedroom"] = bbox_converted
+                    elif re.search(r'living\s+room|lounge|sitting', text_lower):
+                        if "room_types" not in results:
+                            results["room_types"] = {}
+                        results["room_types"]["Living Room"] = bbox_converted
+                    elif re.search(r'dining\s+room|dining', text_lower):
+                        if "room_types" not in results:
+                            results["room_types"] = {}
+                        results["room_types"]["Dining Room"] = bbox_converted
+                    elif re.search(r'utility|laundry', text_lower):
+                        if "room_types" not in results:
+                            results["room_types"] = {}
+                        results["room_types"]["Utility Room"] = bbox_converted
+                    
+                    if re.search(r'render|rendered|external\s+render', text_lower):
+                        if "wall_finishes" not in results:
+                            results["wall_finishes"] = {}
+                        results["wall_finishes"]["Render"] = bbox_converted
+                    elif re.search(r'stone|natural\s+stone|stone\s+cladding', text_lower):
+                        if "wall_finishes" not in results:
+                            results["wall_finishes"] = {}
+                        results["wall_finishes"]["Stone"] = bbox_converted
+                    elif re.search(r'brick|brickwork|brick\s+wall', text_lower):
+                        if "wall_finishes" not in results:
+                            results["wall_finishes"] = {}
+                        results["wall_finishes"]["Brick"] = bbox_converted
+                    elif re.search(r'block|blockwork|concrete\s+block', text_lower):
+                        if "wall_finishes" not in results:
+                            results["wall_finishes"] = {}
+                        results["wall_finishes"]["Block"] = bbox_converted
+                    
+                    if re.search(r'ground\s+floor|gf\s+plan|ground\s+level', text_lower):
+                        if "floor_plans" not in results:
+                            results["floor_plans"] = {}
+                        results["floor_plans"]["Ground Floor"] = bbox_converted
+                    elif re.search(r'first\s+floor|ff\s+plan|upper\s+floor', text_lower):
+                        if "floor_plans" not in results:
+                            results["floor_plans"] = {}
+                        results["floor_plans"]["First Floor"] = bbox_converted
+                    elif re.search(r'bungalow|single\s+storey|one\s+storey', text_lower):
+                        if "floor_plans" not in results:
+                            results["floor_plans"] = {}
+                        results["floor_plans"]["Bungalow"] = bbox_converted
+                    
                     if self._is_dimension_text(text):
                         results['dimensions'].append({
                             'text': text,
@@ -256,6 +312,12 @@ class DrawingProcessor:
                             'value': self._extract_dimension_value(text)
                         })
                         
+            if "room_types" not in results:
+                results["room_types"] = {}
+            if "wall_finishes" not in results:
+                results["wall_finishes"] = {}
+            if "floor_plans" not in results:
+                results["floor_plans"] = {}
             results['building_types'] = building_types
         except Exception as e:
             logger.warning(f"OCR failed: {str(e)}")

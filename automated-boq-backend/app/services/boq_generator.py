@@ -72,7 +72,9 @@ class BOQGenerator:
                 
                 if drawing_type == 'architectural':
                     items = self._process_architectural_elements(
-                        project_id, drawing_id, elements, rules, building_type
+                        project_id, drawing_id, elements, rules, building_type,
+                        drawing_data.get('room_types', {}),
+                        drawing_data.get('wall_finishes', {})
                     )
                     boq_items.extend(items)
                 elif drawing_type == 'structural':
@@ -90,9 +92,13 @@ class BOQGenerator:
 
     def _process_architectural_elements(self, project_id: str, drawing_id: str, 
                                       elements: List[Dict], rules: Dict, 
-                                      building_type: str = "General") -> List[BOQItem]:
-        """Process architectural elements into BOQ items"""
+                                      building_type: str = "General",
+                                      room_types: Dict = None,
+                                      wall_finishes: Dict = None) -> List[BOQItem]:
+        """Process architectural elements into BOQ items with enhanced detection"""
         boq_items = []
+        room_types = room_types or {}
+        wall_finishes = wall_finishes or {}
         
         element_types = {}
         for e in elements:
@@ -171,23 +177,64 @@ class BOQGenerator:
                 category="flooring", trade="civil", measurement_standard=MeasurementStandard.SMM7
             ))
         
-        door_openings = [e for e in all_rectangles if 500000 < e.get('area', 0) < 5000000]  # 0.5-5m² openings
-        window_openings = [e for e in all_rectangles if 100000 < e.get('area', 0) <= 500000]  # 0.1-0.5m² openings
+        door_symbols = []
+        for line in all_lines:
+            length = line.get('length', 0)
+            if 700 <= length <= 1000:
+                door_symbols.append(line)
         
-        if door_openings:
+        external_doors = []
+        internal_doors = []
+        for door in door_symbols:
+            is_external = self._is_door_external(door, exterior_walls)
+            if is_external:
+                external_doors.append(door)
+            else:
+                internal_doors.append(door)
+        
+        if external_doors:
             boq_items.append(BOQItem(
                 project_id=project_id, drawing_id=drawing_id,
-                item_code="L10.1.1.1", description="Door openings and frames",
-                unit="nr", quantity=len(door_openings),
+                item_code="L10.1.1.1", description="External doors and frames",
+                unit="nr", quantity=len(external_doors),
                 category="doors", trade="joinery", measurement_standard=MeasurementStandard.SMM7
             ))
         
-        if window_openings:
+        if internal_doors:
             boq_items.append(BOQItem(
                 project_id=project_id, drawing_id=drawing_id,
-                item_code="L10.2.1.1", description="Window openings and frames",
-                unit="nr", quantity=len(window_openings),
+                item_code="L10.1.2.1", description="Internal doors and frames",
+                unit="nr", quantity=len(internal_doors),
+                category="doors", trade="joinery", measurement_standard=MeasurementStandard.SMM7
+            ))
+        
+        window_symbols = []
+        for rect in all_rectangles:
+            area = rect.get('area', 0)
+            if 1000000 <= area <= 4000000:  # 1-4m² in mm²
+                window_symbols.append(rect)
+        
+        if window_symbols:
+            boq_items.append(BOQItem(
+                project_id=project_id, drawing_id=drawing_id,
+                item_code="L10.2.1.1", description="Windows and frames",
+                unit="nr", quantity=len(window_symbols),
                 category="windows", trade="joinery", measurement_standard=MeasurementStandard.SMM7
+            ))
+        
+        # Bathroom fixture detection based on room types and small circles
+        bathroom_fixtures = []
+        if "Bathroom" in room_types:
+            small_circles = [c for c in all_circles if 5 <= c.get('radius', 0) <= 15]
+            bathroom_fixtures.extend(small_circles)
+        
+        if bathroom_fixtures:
+            fixture_count = max(len(bathroom_fixtures), len(room_types.get("Bathroom", [])) * 3)
+            boq_items.append(BOQItem(
+                project_id=project_id, drawing_id=drawing_id,
+                item_code="N13.1.1.1", description="Sanitary appliances and fittings",
+                unit="nr", quantity=fixture_count,
+                category="plumbing", trade="plumbing", measurement_standard=MeasurementStandard.SMM7
             ))
         
         columns = [e for e in all_circles if e.get('radius', 0) > 100]  # Circles > 10cm radius
@@ -267,6 +314,300 @@ class BOQGenerator:
                 category="excavation", trade="civil", measurement_standard=MeasurementStandard.SMM7
             ))
         
+        if wall_finishes:
+            total_external_wall_area = sum(wall.get('length', 0) for wall in exterior_walls) / 1000 * 2.7
+            
+            if "Render" in wall_finishes:
+                render_area = total_external_wall_area * 0.6  # Assume 60% render
+                boq_items.append(BOQItem(
+                    project_id=project_id, drawing_id=drawing_id,
+                    item_code="M20.2.2.1", description="External wall render finish",
+                    unit="m²", quantity=round(render_area, 2),
+                    category="finishes", trade="civil", measurement_standard=MeasurementStandard.SMM7
+                ))
+            
+            if "Stone" in wall_finishes:
+                stone_area = total_external_wall_area * 0.4  # Assume 40% stone
+                boq_items.append(BOQItem(
+                    project_id=project_id, drawing_id=drawing_id,
+                    item_code="F30.1.1.1", description="Natural stone cladding",
+                    unit="m²", quantity=round(stone_area, 2),
+                    category="finishes", trade="masonry", measurement_standard=MeasurementStandard.SMM7
+                ))
+        
+        if room_types:
+            for room_type, _ in room_types.items():
+                if room_type == "Kitchen":
+                    boq_items.append(BOQItem(
+                        project_id=project_id, drawing_id=drawing_id,
+                        item_code="N10.1.1.1", description="Kitchen fittings and equipment",
+                        unit="item", quantity=1,
+                        category="fittings", trade="joinery", measurement_standard=MeasurementStandard.SMM7
+                    ))
+                elif room_type == "Bathroom":
+                    boq_items.append(BOQItem(
+                        project_id=project_id, drawing_id=drawing_id,
+                        item_code="M40.1.1.1", description="Ceramic wall tiling to bathrooms",
+                        unit="m²", quantity=20,  # Typical bathroom tiling
+                        category="finishes", trade="tiling", measurement_standard=MeasurementStandard.SMM7
+                    ))
+        
+        
+        if total_building_area > 0:
+            boq_items.append(BOQItem(
+                project_id=project_id, drawing_id=drawing_id,
+                item_code="D20.1.1.1", description="Excavation for foundations",
+                unit="m³", quantity=round(total_building_area * 0.6, 2),
+                category="excavation", trade="civil", measurement_standard=MeasurementStandard.SMM7
+            ))
+            
+            boq_items.append(BOQItem(
+                project_id=project_id, drawing_id=drawing_id,
+                item_code="E10.1.1.1", description="Concrete foundations",
+                unit="m³", quantity=round(total_building_area * 0.4, 2),
+                category="concrete", trade="structural", measurement_standard=MeasurementStandard.SMM7
+            ))
+            
+            boq_items.append(BOQItem(
+                project_id=project_id, drawing_id=drawing_id,
+                item_code="J40.1.1.1", description="Damp proof course",
+                unit="m²", quantity=round(total_building_area * 0.8, 2),
+                category="waterproofing", trade="civil", measurement_standard=MeasurementStandard.SMM7
+            ))
+        
+        if exterior_walls:
+            total_wall_length = sum(wall.get('length', 0) for wall in exterior_walls) / 1000
+            wall_area = total_wall_length * 2.7
+            
+            boq_items.append(BOQItem(
+                project_id=project_id, drawing_id=drawing_id,
+                item_code="F10.1.1.1", description="External brick/block walling",
+                unit="m²", quantity=round(wall_area, 2),
+                category="masonry", trade="masonry", measurement_standard=MeasurementStandard.SMM7
+            ))
+            
+            boq_items.append(BOQItem(
+                project_id=project_id, drawing_id=drawing_id,
+                item_code="F10.2.1.1", description="Internal brick/block walling",
+                unit="m²", quantity=round(wall_area * 0.6, 2),
+                category="masonry", trade="masonry", measurement_standard=MeasurementStandard.SMM7
+            ))
+        
+        if total_building_area > 0:
+            boq_items.append(BOQItem(
+                project_id=project_id, drawing_id=drawing_id,
+                item_code="G20.1.1.1", description="Timber roof structure",
+                unit="m²", quantity=round(total_building_area * 1.2, 2),
+                category="roofing", trade="carpentry", measurement_standard=MeasurementStandard.SMM7
+            ))
+            
+            boq_items.append(BOQItem(
+                project_id=project_id, drawing_id=drawing_id,
+                item_code="H60.1.1.1", description="Roof covering and structure",
+                unit="m²", quantity=round(total_building_area * 1.2, 2),
+                category="roofing", trade="roofing", measurement_standard=MeasurementStandard.SMM7
+            ))
+        
+        if wall_finishes:
+            total_external_wall_area = sum(wall.get('length', 0) for wall in exterior_walls) / 1000 * 2.7
+            
+            if "Render" in wall_finishes:
+                render_area = total_external_wall_area * 0.6
+                boq_items.append(BOQItem(
+                    project_id=project_id, drawing_id=drawing_id,
+                    item_code="M20.2.2.1", description="External wall render finish",
+                    unit="m²", quantity=round(render_area, 2),
+                    category="finishes", trade="civil", measurement_standard=MeasurementStandard.SMM7
+                ))
+            
+            if "Stone" in wall_finishes:
+                stone_area = total_external_wall_area * 0.4
+                boq_items.append(BOQItem(
+                    project_id=project_id, drawing_id=drawing_id,
+                    item_code="F30.1.1.1", description="Natural stone cladding",
+                    unit="m²", quantity=round(stone_area, 2),
+                    category="finishes", trade="masonry", measurement_standard=MeasurementStandard.SMM7
+                ))
+        
+        if room_types:
+            for room_type, _ in room_types.items():
+                if room_type == "Kitchen":
+                    boq_items.extend([
+                        BOQItem(
+                            project_id=project_id, drawing_id=drawing_id,
+                            item_code="N10.1.1.1", description="Kitchen fittings and equipment",
+                            unit="item", quantity=1,
+                            category="fittings", trade="joinery", measurement_standard=MeasurementStandard.SMM7
+                        ),
+                        BOQItem(
+                            project_id=project_id, drawing_id=drawing_id,
+                            item_code="M40.2.1.1", description="Ceramic floor tiling to kitchen",
+                            unit="m²", quantity=15,
+                            category="finishes", trade="tiling", measurement_standard=MeasurementStandard.SMM7
+                        ),
+                        BOQItem(
+                            project_id=project_id, drawing_id=drawing_id,
+                            item_code="M40.1.2.1", description="Ceramic wall tiling to kitchen",
+                            unit="m²", quantity=25,
+                            category="finishes", trade="tiling", measurement_standard=MeasurementStandard.SMM7
+                        )
+                    ])
+                elif room_type == "Bathroom":
+                    boq_items.extend([
+                        BOQItem(
+                            project_id=project_id, drawing_id=drawing_id,
+                            item_code="M40.1.1.1", description="Ceramic wall tiling to bathrooms",
+                            unit="m²", quantity=20,
+                            category="finishes", trade="tiling", measurement_standard=MeasurementStandard.SMM7
+                        ),
+                        BOQItem(
+                            project_id=project_id, drawing_id=drawing_id,
+                            item_code="M40.2.2.1", description="Ceramic floor tiling to bathrooms",
+                            unit="m²", quantity=6,
+                            category="finishes", trade="tiling", measurement_standard=MeasurementStandard.SMM7
+                        ),
+                        BOQItem(
+                            project_id=project_id, drawing_id=drawing_id,
+                            item_code="R10.1.1.1", description="Sanitary fittings and fixtures",
+                            unit="nr", quantity=3,
+                            category="plumbing", trade="plumbing", measurement_standard=MeasurementStandard.SMM7
+                        )
+                    ])
+                elif room_type == "Living Room":
+                    boq_items.append(BOQItem(
+                        project_id=project_id, drawing_id=drawing_id,
+                        item_code="M20.1.2.1", description="Carpet flooring to living areas",
+                        unit="m²", quantity=25,
+                        category="finishes", trade="flooring", measurement_standard=MeasurementStandard.SMM7
+                    ))
+                elif room_type == "Bedroom":
+                    boq_items.append(BOQItem(
+                        project_id=project_id, drawing_id=drawing_id,
+                        item_code="M20.1.3.1", description="Carpet flooring to bedrooms",
+                        unit="m²", quantity=12,
+                        category="finishes", trade="flooring", measurement_standard=MeasurementStandard.SMM7
+                    ))
+        
+        if total_building_area > 0:
+            boq_items.extend([
+                BOQItem(
+                    project_id=project_id, drawing_id=drawing_id,
+                    item_code="V20.1.1.1", description="PVC conduit installation",
+                    unit="m", quantity=round(total_building_area * 2, 2),
+                    category="electrical", trade="electrical", measurement_standard=MeasurementStandard.SMM7
+                ),
+                BOQItem(
+                    project_id=project_id, drawing_id=drawing_id,
+                    item_code="V21.2.1.1", description="Light switches",
+                    unit="nr", quantity=15,
+                    category="electrical", trade="electrical", measurement_standard=MeasurementStandard.SMM7
+                ),
+                BOQItem(
+                    project_id=project_id, drawing_id=drawing_id,
+                    item_code="V22.1.1.1", description="Lighting fixtures",
+                    unit="nr", quantity=20,
+                    category="electrical", trade="electrical", measurement_standard=MeasurementStandard.SMM7
+                ),
+                BOQItem(
+                    project_id=project_id, drawing_id=drawing_id,
+                    item_code="V10.1.1.1", description="Consumer unit and distribution board",
+                    unit="nr", quantity=1,
+                    category="electrical", trade="electrical", measurement_standard=MeasurementStandard.SMM7
+                )
+            ])
+        
+        if total_building_area > 0:
+            boq_items.extend([
+                BOQItem(
+                    project_id=project_id, drawing_id=drawing_id,
+                    item_code="S10.1.1.1", description="Water supply systems",
+                    unit="m", quantity=round(total_building_area * 1.5, 2),
+                    category="plumbing", trade="plumbing", measurement_standard=MeasurementStandard.SMM7
+                ),
+                BOQItem(
+                    project_id=project_id, drawing_id=drawing_id,
+                    item_code="T10.1.1.1", description="Central heating system",
+                    unit="item", quantity=1,
+                    category="heating", trade="mechanical", measurement_standard=MeasurementStandard.SMM7
+                ),
+                BOQItem(
+                    project_id=project_id, drawing_id=drawing_id,
+                    item_code="T31.1.1.1", description="Radiators",
+                    unit="nr", quantity=8,
+                    category="heating", trade="mechanical", measurement_standard=MeasurementStandard.SMM7
+                )
+            ])
+        
+        if external_doors or internal_doors:
+            boq_items.extend([
+                BOQItem(
+                    project_id=project_id, drawing_id=drawing_id,
+                    item_code="P20.1.1.1", description="Door furniture and ironmongery",
+                    unit="set", quantity=len(external_doors) + len(internal_doors),
+                    category="ironmongery", trade="joinery", measurement_standard=MeasurementStandard.SMM7
+                ),
+                BOQItem(
+                    project_id=project_id, drawing_id=drawing_id,
+                    item_code="L20.1.1.1", description="Stairs and balustrades",
+                    unit="nr", quantity=1 if building_type == "Type A" else 0,
+                    category="joinery", trade="joinery", measurement_standard=MeasurementStandard.SMM7
+                )
+            ])
+        
+        if total_building_area > 0:
+            boq_items.extend([
+                BOQItem(
+                    project_id=project_id, drawing_id=drawing_id,
+                    item_code="P10.1.1.1", description="Wall insulation",
+                    unit="m²", quantity=round(total_building_area * 2, 2),
+                    category="insulation", trade="insulation", measurement_standard=MeasurementStandard.SMM7
+                ),
+                BOQItem(
+                    project_id=project_id, drawing_id=drawing_id,
+                    item_code="P10.2.1.1", description="Roof insulation",
+                    unit="m²", quantity=round(total_building_area * 1.2, 2),
+                    category="insulation", trade="insulation", measurement_standard=MeasurementStandard.SMM7
+                )
+            ])
+        
+        if total_building_area > 0:
+            boq_items.extend([
+                BOQItem(
+                    project_id=project_id, drawing_id=drawing_id,
+                    item_code="R12.1.1.1", description="Soil and waste drainage",
+                    unit="m", quantity=round(total_building_area * 0.8, 2),
+                    category="drainage", trade="drainage", measurement_standard=MeasurementStandard.SMM7
+                ),
+                BOQItem(
+                    project_id=project_id, drawing_id=drawing_id,
+                    item_code="R13.1.1.1", description="Land drainage",
+                    unit="m", quantity=round(total_building_area * 0.6, 2),
+                    category="drainage", trade="drainage", measurement_standard=MeasurementStandard.SMM7
+                )
+            ])
+        
+        if total_building_area > 0:
+            boq_items.extend([
+                BOQItem(
+                    project_id=project_id, drawing_id=drawing_id,
+                    item_code="M60.1.1.1", description="Painting to internal walls",
+                    unit="m²", quantity=round(total_building_area * 3, 2),
+                    category="decoration", trade="decoration", measurement_standard=MeasurementStandard.SMM7
+                ),
+                BOQItem(
+                    project_id=project_id, drawing_id=drawing_id,
+                    item_code="M60.2.1.1", description="Painting to external walls",
+                    unit="m²", quantity=round(total_building_area * 1.5, 2),
+                    category="decoration", trade="decoration", measurement_standard=MeasurementStandard.SMM7
+                ),
+                BOQItem(
+                    project_id=project_id, drawing_id=drawing_id,
+                    item_code="M60.3.1.1", description="Painting to ceilings",
+                    unit="m²", quantity=round(total_building_area, 2),
+                    category="decoration", trade="decoration", measurement_standard=MeasurementStandard.SMM7
+                )
+            ])
+        
         print(f"DEBUG: Enhanced architectural processing created {len(boq_items)} BOQ items for {building_type}")
         return boq_items
         
@@ -323,14 +664,18 @@ class BOQGenerator:
                 "area_multiplier": 1.0,
                 "complexity_factor": 1.0,
                 "typical_floors": 2,
-                "sockets_per_house": 25
+                "sockets_per_house": 25,
+                "description": "Two-storey house with ground and first floor",
+                "floor_types": ["Ground Floor", "First Floor"]
             },
             "Type B": {
                 "socket_multiplier": 1.0,
                 "area_multiplier": 1.2,
                 "complexity_factor": 1.1,
-                "typical_floors": 2,
-                "sockets_per_house": 30
+                "typical_floors": 1,
+                "sockets_per_house": 20,
+                "description": "Single-storey bungalow",
+                "floor_types": ["Bungalow"]
             },
             "Office Building": {
                 "socket_multiplier": 2.5,
@@ -388,6 +733,24 @@ class BOQGenerator:
         }
         
         return configs.get(building_type, configs["General"])
+    
+    def _is_door_external(self, door: Dict, exterior_walls: List[Dict]) -> bool:
+        """Determine if a door is external based on proximity to exterior walls"""
+        door_center = self._get_line_center(door)
+        
+        for wall in exterior_walls:
+            wall_center = self._get_line_center(wall)
+            distance = np.sqrt((door_center[0] - wall_center[0])**2 + 
+                             (door_center[1] - wall_center[1])**2)
+            if distance < 100:  # Within 100 pixels of exterior wall
+                return True
+        return False
+    
+    def _get_line_center(self, line: Dict) -> tuple:
+        """Get the center point of a line"""
+        start = line.get('start', (0, 0))
+        end = line.get('end', (0, 0))
+        return ((start[0] + end[0]) / 2, (start[1] + end[1]) / 2)
     
     def _calculate_electrical_sockets(self, electrical_points: List[Dict], 
                                     building_type: str, config: Dict[str, Any]) -> int:
