@@ -322,6 +322,9 @@ class DrawingProcessor:
         except Exception as e:
             logger.warning(f"OCR failed: {str(e)}")
         
+        title_block_info = self._extract_title_block_info(results['text_annotations'])
+        results['title_block_info'] = title_block_info
+        
         results['drawing_type'] = self._classify_drawing_type(results['text_annotations'])
         
         return results
@@ -652,3 +655,117 @@ class DrawingProcessor:
                 })
         
         return queries
+
+    def _extract_title_block_info(self, text_annotations: List[Dict]) -> Dict[str, Any]:
+        """Extract title block information from OCR text annotations"""
+        import re
+        from datetime import datetime
+        
+        title_block_info = {
+            'drawing_number': None,
+            'drawing_title': None,
+            'revision_number': None,
+            'revision_date': None,
+            'project_name': None,
+            'project_number': None
+        }
+        
+        all_text = ' '.join([ann.get('text', '') for ann in text_annotations])
+        
+        title_block_texts = []
+        for ann in text_annotations:
+            bbox = ann.get('bbox', [])
+            if bbox and len(bbox) >= 4:
+                x_center = sum(point[0] for point in bbox) / len(bbox)
+                y_center = sum(point[1] for point in bbox) / len(bbox)
+                if x_center > 0.7 and y_center > 0.7:
+                    title_block_texts.append(ann.get('text', ''))
+        
+        title_block_text = ' '.join(title_block_texts)
+        
+        drawing_number_patterns = [
+            r'(?:drawing\s+(?:no\.?|number)\s*:?\s*)([A-Z0-9\-/]+)',
+            r'(?:dwg\.?\s+(?:no\.?|#)\s*:?\s*)([A-Z0-9\-/]+)',
+            r'(?:sheet\s+(?:no\.?|number)\s*:?\s*)([A-Z0-9\-/]+)',
+            r'([A-Z]{1,3}[0-9]{2,4}[A-Z]?)',
+            r'([0-9]{3,4}[A-Z]?)',
+        ]
+        
+        for pattern in drawing_number_patterns:
+            match = re.search(pattern, title_block_text, re.IGNORECASE)
+            if match:
+                title_block_info['drawing_number'] = match.group(1).strip()
+                break
+        
+        title_patterns = [
+            r'(?:title\s*:?\s*)([A-Za-z0-9\s\-,\.]+?)(?:\s+(?:scale|date|rev))',
+            r'(?:project\s*:?\s*)([A-Za-z0-9\s\-,\.]+?)(?:\s+(?:scale|date|rev))',
+            r'(?:description\s*:?\s*)([A-Za-z0-9\s\-,\.]+?)(?:\s+(?:scale|date|rev))',
+        ]
+        
+        for pattern in title_patterns:
+            match = re.search(pattern, title_block_text, re.IGNORECASE)
+            if match:
+                title_block_info['drawing_title'] = match.group(1).strip()
+                break
+        
+        revision_patterns = [
+            r'(?:rev\.?\s*:?\s*)([A-Z0-9]+)',
+            r'(?:revision\s*:?\s*)([A-Z0-9]+)',
+            r'\b([A-Z])\s*(?:rev|revision)',
+            r'(?:issue\s*:?\s*)([A-Z0-9]+)',
+        ]
+        
+        for pattern in revision_patterns:
+            match = re.search(pattern, title_block_text, re.IGNORECASE)
+            if match:
+                title_block_info['revision_number'] = match.group(1).strip()
+                break
+        
+        date_patterns = [
+            r'(?:date\s*:?\s*)(\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4})',
+            r'(?:dated?\s*:?\s*)(\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4})',
+            r'(\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4})',
+        ]
+        
+        for pattern in date_patterns:
+            match = re.search(pattern, title_block_text, re.IGNORECASE)
+            if match:
+                try:
+                    date_str = match.group(1)
+                    for fmt in ['%d/%m/%Y', '%m/%d/%Y', '%d-%m-%Y', '%m-%d-%Y', '%d.%m.%Y', '%m.%d.%Y']:
+                        try:
+                            parsed_date = datetime.strptime(date_str, fmt)
+                            title_block_info['revision_date'] = parsed_date
+                            break
+                        except ValueError:
+                            continue
+                except:
+                    pass
+                break
+        
+        project_patterns = [
+            r'(?:project\s*:?\s*)([A-Za-z0-9\s\-,\.]+?)(?:\s+(?:drawing|dwg|sheet))',
+            r'(?:client\s*:?\s*)([A-Za-z0-9\s\-,\.]+?)(?:\s+(?:project|drawing))',
+            r'(?:job\s*:?\s*)([A-Za-z0-9\s\-,\.]+?)(?:\s+(?:drawing|dwg))',
+        ]
+        
+        for pattern in project_patterns:
+            match = re.search(pattern, all_text, re.IGNORECASE)
+            if match:
+                title_block_info['project_name'] = match.group(1).strip()
+                break
+        
+        project_number_patterns = [
+            r'(?:project\s+(?:no\.?|number)\s*:?\s*)([A-Z0-9\-/]+)',
+            r'(?:job\s+(?:no\.?|number)\s*:?\s*)([A-Z0-9\-/]+)',
+            r'(?:contract\s+(?:no\.?|number)\s*:?\s*)([A-Z0-9\-/]+)',
+        ]
+        
+        for pattern in project_number_patterns:
+            match = re.search(pattern, all_text, re.IGNORECASE)
+            if match:
+                title_block_info['project_number'] = match.group(1).strip()
+                break
+        
+        return title_block_info

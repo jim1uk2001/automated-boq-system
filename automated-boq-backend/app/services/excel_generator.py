@@ -110,12 +110,25 @@ class ExcelGenerator:
         
         ws['A1'] = f"Project: {project.name}"
         ws['A1'].font = Font(bold=True, size=14)
-        ws['A2'] = f"Measurement Standard: {project.measurement_standard.value.upper()}"
-        ws['A2'].font = Font(bold=True, size=12)
-        ws['A4'] = "BILL OF QUANTITIES"
-        ws['A4'].font = Font(bold=True, size=16)
         
-        header_row = 6
+        project_info_from_drawings = self._extract_project_info_from_drawings(project.drawings)
+        header_row_offset = 0
+        if project_info_from_drawings:
+            if project_info_from_drawings.get('project_number'):
+                ws['A2'] = f"Project Number: {project_info_from_drawings.get('project_number')}"
+                ws['A2'].font = Font(bold=True, size=12)
+                header_row_offset += 1
+            if project_info_from_drawings.get('client_name'):
+                ws[f'A{2 + header_row_offset}'] = f"Client: {project_info_from_drawings.get('client_name')}"
+                ws[f'A{2 + header_row_offset}'].font = Font(bold=True, size=12)
+                header_row_offset += 1
+        
+        ws[f'A{2 + header_row_offset}'] = f"Measurement Standard: {project.measurement_standard.value.upper()}"
+        ws[f'A{2 + header_row_offset}'].font = Font(bold=True, size=12)
+        ws[f'A{4 + header_row_offset}'] = "BILL OF QUANTITIES"
+        ws[f'A{4 + header_row_offset}'].font = Font(bold=True, size=16)
+        
+        header_row = 6 + header_row_offset
         for col, header in enumerate(headers, 1):
             cell = ws.cell(row=header_row, column=col, value=header)
             cell.font = self.header_font
@@ -249,6 +262,24 @@ class ExcelGenerator:
         wb.save(excel_buffer)
         excel_buffer.seek(0)
         return excel_buffer.getvalue()
+
+    def _extract_project_info_from_drawings(self, drawings: List) -> Dict[str, str]:
+        """Extract project information from processed drawings for BOQ front page"""
+        project_info = {}
+        
+        for drawing in drawings:
+            if hasattr(drawing, 'project_name') and drawing.project_name:
+                project_info['project_name'] = drawing.project_name
+            if hasattr(drawing, 'project_number') and drawing.project_number:
+                project_info['project_number'] = drawing.project_number
+            
+            if hasattr(drawing, 'project_name') and drawing.project_name:
+                import re
+                client_match = re.search(r'(?:for\s+|client\s*:\s*)([A-Za-z\s&]+)', drawing.project_name, re.IGNORECASE)
+                if client_match:
+                    project_info['client_name'] = client_match.group(1).strip()
+        
+        return project_info
     
     def generate_boq_pdf(self, boq_items: List[Dict[str, Any]], project_name: str, 
                         drawings: List[Dict[str, Any]] = None, 

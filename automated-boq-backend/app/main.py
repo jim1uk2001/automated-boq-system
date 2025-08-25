@@ -272,6 +272,15 @@ async def upload_drawings_single(
             drawing.scale = processed_data.get('scale')
             drawing.revision = processed_data.get('revision')
             drawing.title = processed_data.get('title')
+            
+            title_block_info = processed_data.get('title_block_info', {})
+            drawing.drawing_number = title_block_info.get('drawing_number')
+            drawing.drawing_title = title_block_info.get('drawing_title') or drawing.title
+            drawing.revision_number = title_block_info.get('revision_number') or drawing.revision
+            drawing.revision_date = title_block_info.get('revision_date')
+            drawing.project_name = title_block_info.get('project_name')
+            drawing.project_number = title_block_info.get('project_number')
+            
             drawing.processed_data = processed_data  # Store the complete processed data
             drawing.processed_at = datetime.utcnow()
             
@@ -294,8 +303,10 @@ async def upload_drawings_single(
             error_message=drawing.error_message,
             uploaded_at=drawing.uploaded_at,
             processed_at=drawing.processed_at,
-            drawing_title=drawing.title,
-            revision_number=drawing.revision,
+            drawing_title=drawing.drawing_title or drawing.title,
+            revision_number=drawing.revision_number or drawing.revision,
+            revision_date=drawing.revision_date,
+            drawing_number=drawing.drawing_number,
             quality_score=drawing.quality_score,
             architect_queries=drawing.architect_queries,
             quality_issues=drawing.quality_issues

@@ -58,6 +58,12 @@ class Drawing(BaseModel):
     scale: Optional[str] = None
     revision: Optional[str] = None
     title: Optional[str] = None
+    drawing_number: Optional[str] = None
+    drawing_title: Optional[str] = None
+    revision_number: Optional[str] = None
+    revision_date: Optional[datetime] = None
+    project_name: Optional[str] = None
+    project_number: Optional[str] = None
     status: DrawingStatus = DrawingStatus.UPLOADED
     error_message: Optional[str] = None
     uploaded_at: datetime = Field(default_factory=datetime.utcnow)
