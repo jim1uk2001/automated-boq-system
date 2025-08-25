@@ -326,15 +326,25 @@ class DrawingProcessor:
         results['title_block_info'] = title_block_info
         
         detected_scale = self._detect_scale(results['text_annotations'])
+        dimension_calibration = self._detect_dimension_calibration(results['text_annotations'], image.shape)
+        
         if detected_scale:
             results['scale_info'] = detected_scale
             results['scale'] = detected_scale
             scale_factor = self._calculate_scale_factor(detected_scale)
             results['scale_factor'] = scale_factor
+            results['calibration_method'] = 'scale_annotation'
+        elif dimension_calibration:
+            results['scale_info'] = f"Calibrated from {dimension_calibration['text']}"
+            results['scale'] = f"1:{dimension_calibration['mm_per_pixel']:.1f}"
+            results['scale_factor'] = dimension_calibration['mm_per_pixel']
+            results['calibration_method'] = 'dimension_annotation'
+            results['calibration_details'] = dimension_calibration
         else:
             results['scale_info'] = None
             results['scale'] = None
             results['scale_factor'] = None
+            results['calibration_method'] = None
         
         results['drawing_type'] = self._classify_drawing_type(results['text_annotations'])
         
@@ -368,13 +378,44 @@ class DrawingProcessor:
                 return True
         return False
 
-    def _extract_dimension_value(self, text: str) -> Optional[float]:
-        """Extract numeric value from dimension text"""
+    def _extract_dimension_value(self, text: str) -> Optional[Dict[str, Any]]:
+        """Extract numeric value and unit from dimension text"""
         import re
         
-        match = re.search(r'(\d+\.?\d*)', text)
-        if match:
-            return float(match.group(1))
+        dimension_patterns = [
+            r'(\d+(?:,\d{3})*(?:\.\d+)?)\s*(mm|millimeters?)',  # "5,000 mm" or "5000.5 mm"
+            r'(\d+(?:,\d{3})*(?:\.\d+)?)\s*(m|meters?)',       # "5.5 m" or "5 meters"
+            r'(\d+(?:,\d{3})*(?:\.\d+)?)\s*(cm|centimeters?)', # "550 cm"
+            r'(\d+(?:,\d{3})*(?:\.\d+)?)\s*(ft|feet)',         # "16 ft"
+            r'(\d+(?:,\d{3})*(?:\.\d+)?)\s*(in|inches?)',      # "192 in"
+            r'(\d+(?:,\d{3})*(?:\.\d+)?)',                     # Plain numbers
+        ]
+        
+        for pattern in dimension_patterns:
+            match = re.search(pattern, text.lower())
+            if match:
+                value_str = match.group(1).replace(',', '')  # Remove commas
+                value = float(value_str)
+                unit = match.group(2) if len(match.groups()) > 1 else None
+                
+                if unit in ['m', 'meter', 'meters']:
+                    value_mm = value * 1000
+                elif unit in ['cm', 'centimeter', 'centimeters']:
+                    value_mm = value * 10
+                elif unit in ['ft', 'feet']:
+                    value_mm = value * 304.8
+                elif unit in ['in', 'inch', 'inches']:
+                    value_mm = value * 25.4
+                else:  # mm or no unit
+                    value_mm = value
+                
+                return {
+                    'value': value,
+                    'unit': unit or 'mm',
+                    'value_mm': value_mm,
+                    'original_text': text
+                }
+        
         return None
 
     def _detect_scale(self, text_annotations: List[Dict]) -> Optional[str]:
@@ -395,7 +436,7 @@ class DrawingProcessor:
             match = re.search(pattern, all_text, re.IGNORECASE)
             if match:
                 scale_value = int(match.group(1))
-                if 10 <= scale_value <= 2000:
+                if scale_value > 0:  # Any positive scale is valid (1:1250, 1:anything)
                     return f"1:{scale_value}"
         
         return None
@@ -410,6 +451,70 @@ class DrawingProcessor:
         if match:
             return float(match.group(1))
         return None
+    
+    def _detect_dimension_calibration(self, text_annotations: List[Dict], image_shape: tuple) -> Optional[Dict[str, Any]]:
+        """Detect dimension-based calibration using OCR measurements"""
+        import re
+        
+        calibration_candidates = []
+        
+        for ann in text_annotations:
+            text = ann.get('text', '').strip()
+            if not text:
+                continue
+                
+            dimension_info = self._extract_dimension_value(text)
+            if dimension_info and dimension_info['value_mm'] > 100:  # Reasonable minimum size
+                
+                bbox = ann.get('bbox')
+                if bbox:
+                    try:
+                        if isinstance(bbox[0], (list, tuple)):
+                            pixel_length = self._calculate_polygon_perimeter([coord for point in bbox for coord in point]) / 4
+                        elif len(bbox) == 4 and all(isinstance(x, (int, float)) for x in bbox):
+                            # Standard format: [x1, y1, x2, y2]
+                            pixel_length = max(abs(bbox[2] - bbox[0]), abs(bbox[3] - bbox[1]))
+                        elif len(bbox) >= 6:
+                            pixel_length = self._calculate_polygon_perimeter(bbox) / 4
+                        else:
+                            continue  # Skip invalid bbox formats
+                    except (TypeError, IndexError, ValueError):
+                        continue  # Skip problematic bbox data
+                    
+                    if pixel_length > 10:  # Minimum pixel size
+                        mm_per_pixel = dimension_info['value_mm'] / pixel_length
+                        
+                        calibration_candidates.append({
+                            'dimension_mm': dimension_info['value_mm'],
+                            'pixel_length': pixel_length,
+                            'mm_per_pixel': mm_per_pixel,
+                            'confidence': ann.get('confidence', 0.8),
+                            'text': text,
+                            'method': 'dimension_annotation'
+                        })
+        
+        if calibration_candidates:
+            valid_candidates = [c for c in calibration_candidates if 0.1 <= c['mm_per_pixel'] <= 100]
+            if valid_candidates:
+                best_candidate = max(valid_candidates, key=lambda x: x['confidence'])
+                return best_candidate
+        
+        return None
+    
+    def _calculate_polygon_perimeter(self, polygon_points: List) -> float:
+        """Calculate perimeter of polygon for dimension estimation"""
+        if len(polygon_points) < 6:  # Need at least 3 points (x,y pairs)
+            return 0
+        
+        perimeter = 0
+        points = [(polygon_points[i], polygon_points[i+1]) for i in range(0, len(polygon_points), 2)]
+        
+        for i in range(len(points)):
+            x1, y1 = points[i]
+            x2, y2 = points[(i + 1) % len(points)]
+            perimeter += ((x2 - x1) ** 2 + (y2 - y1) ** 2) ** 0.5
+        
+        return perimeter
 
     def _classify_drawing_type(self, text_annotations: List[Dict]) -> Optional[DrawingType]:
         """Classify drawing type based on text content"""
@@ -488,7 +593,7 @@ class DrawingProcessor:
             missing_info.append("drawing_scale")
         else:
             scale_factor = self._calculate_scale_factor(scale_info)
-            if not scale_factor or scale_factor < 10 or scale_factor > 2000:
+            if not scale_factor or scale_factor <= 0:
                 quality_issues.append("invalid_scale_detected")
                 missing_info.append("valid_drawing_scale")
         
@@ -563,26 +668,16 @@ class DrawingProcessor:
         
         return recommendations
 
-    def _generate_architect_queries(self, quality_assessment: Dict[str, Any], 
-                                   drawing_type: Optional[DrawingType], filename: str) -> List[Dict[str, Any]]:
+    def _generate_architect_queries(self, quality_issues: List[str], filename: str, confidence_threshold: float = 0.7) -> List[Dict[str, Any]]:
         """Generate professional queries for architects/engineers"""
         queries = []
-        issues = quality_assessment.get('issues', [])
-        quality_score = quality_assessment.get('quality_score', 100)
-        
-        if quality_score >= 80:
-            return queries
+        issues = quality_issues
         
         general_queries = self._get_general_queries(issues)
         queries.extend(general_queries)
         
-        if drawing_type:
-            type_specific_queries = self._get_type_specific_queries(drawing_type, issues)
-            queries.extend(type_specific_queries)
-        
         for query in queries:
             query['drawing_filename'] = filename
-            query['quality_score'] = quality_score
         
         return queries
 
