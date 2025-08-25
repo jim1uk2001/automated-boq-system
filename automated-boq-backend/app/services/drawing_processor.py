@@ -325,6 +325,17 @@ class DrawingProcessor:
         title_block_info = self._extract_title_block_info(results['text_annotations'])
         results['title_block_info'] = title_block_info
         
+        detected_scale = self._detect_scale(results['text_annotations'])
+        if detected_scale:
+            results['scale_info'] = detected_scale
+            results['scale'] = detected_scale
+            scale_factor = self._calculate_scale_factor(detected_scale)
+            results['scale_factor'] = scale_factor
+        else:
+            results['scale_info'] = None
+            results['scale'] = None
+            results['scale_factor'] = None
+        
         results['drawing_type'] = self._classify_drawing_type(results['text_annotations'])
         
         return results
@@ -362,6 +373,40 @@ class DrawingProcessor:
         import re
         
         match = re.search(r'(\d+\.?\d*)', text)
+        if match:
+            return float(match.group(1))
+        return None
+
+    def _detect_scale(self, text_annotations: List[Dict]) -> Optional[str]:
+        """Detect drawing scale from OCR text annotations using pattern recognition"""
+        import re
+        
+        all_text = ' '.join([ann.get('text', '') for ann in text_annotations])
+        
+        scale_patterns = [
+            r'scale\s*[:\-=]?\s*1[:|/]\s*(\d+)',     # "Scale: 1:50" or "Scale 1/100"
+            r'1[:|/]\s*(\d+)',                        # Direct "1:50" or "1/100"
+            r'scale\s*1\s*:\s*(\d+)',                 # "Scale 1 : 50"
+            r'@\s*1[:|/]\s*(\d+)',                    # "@1:50" format
+            r'(?:^|\s)1[:|/](\d+)(?:\s|$)',          # Standalone scale ratios
+        ]
+        
+        for pattern in scale_patterns:
+            match = re.search(pattern, all_text, re.IGNORECASE)
+            if match:
+                scale_value = int(match.group(1))
+                if 10 <= scale_value <= 2000:
+                    return f"1:{scale_value}"
+        
+        return None
+    
+    def _calculate_scale_factor(self, scale_string: str) -> Optional[float]:
+        """Calculate scale factor for pixel-to-real-world conversion"""
+        if not scale_string:
+            return None
+            
+        import re
+        match = re.search(r'1[:|/](\d+)', scale_string)
         if match:
             return float(match.group(1))
         return None
@@ -437,6 +482,15 @@ class DrawingProcessor:
         if title_block_matches < min_title_block_info:
             quality_issues.append("incomplete_title_block")
             missing_info.append("title_block_information")
+        
+        if not scale_info:
+            quality_issues.append("no_scale_detected")
+            missing_info.append("drawing_scale")
+        else:
+            scale_factor = self._calculate_scale_factor(scale_info)
+            if not scale_factor or scale_factor < 10 or scale_factor > 2000:
+                quality_issues.append("invalid_scale_detected")
+                missing_info.append("valid_drawing_scale")
         
         if drawing_type:
             type_issues = self._check_drawing_type_requirements(drawing_type, text_annotations, dimensions)
@@ -552,6 +606,15 @@ class DrawingProcessor:
                 "question": "Please confirm the drawing scale and add a scale indicator to the drawing.",
                 "details": "Without a clear scale reference, we cannot accurately determine actual sizes from the drawing.",
                 "suggested_action": "Add scale notation (e.g., 1:100, 1:50) and/or a scale bar"
+            })
+        
+        if "invalid_scale_detected" in issues:
+            queries.append({
+                "category": "scale",
+                "priority": "medium",
+                "question": "Please verify the drawing scale is correct for accurate measurements.",
+                "details": "An unusual scale was detected that may affect measurement accuracy.",
+                "suggested_action": "Confirm the scale notation is correct and matches the drawing content"
             })
         
         if "poor_text_quality" in issues or "no_text_detected" in issues:
@@ -674,22 +737,19 @@ class DrawingProcessor:
         
         title_block_texts = []
         for ann in text_annotations:
-            bbox = ann.get('bbox', [])
-            if bbox and len(bbox) >= 4:
-                x_center = sum(point[0] for point in bbox) / len(bbox)
-                y_center = sum(point[1] for point in bbox) / len(bbox)
-                if x_center > 0.7 and y_center > 0.7:
-                    title_block_texts.append(ann.get('text', ''))
+            text = ann.get('text', '').strip()
+            if text:
+                title_block_texts.append(text)
         
         title_block_text = ' '.join(title_block_texts)
         
         drawing_number_patterns = [
-            r'(?:drawing\s*:?\s*)([A-Z0-9\-/\.]+)',  # "DRAWING: ABC123"
-            r'(?:dwg\.?\s*:?\s*)([A-Z0-9\-/\.]+)',   # "DWG: ABC123"
-            r'(?:sheet\s*:?\s*)([A-Z0-9\-/\.]+)',    # "SHEET: ABC123"
-            r'(?:drawing\s+(?:no\.?|number)\s*:?\s*)([A-Z0-9\-/\.]+)',
-            r'(?:dwg\.?\s+(?:no\.?|#)\s*:?\s*)([A-Z0-9\-/\.]+)',
-            r'(?:sheet\s+(?:no\.?|number)\s*:?\s*)([A-Z0-9\-/\.]+)',
+            r'(?:drawing\s*[:\-=]\s*)([A-Z0-9\-/\.]+)',  # "DRAWING: ABC123" or "DRAWING= ABC123"
+            r'(?:dwg\.?\s*[:\-=]\s*)([A-Z0-9\-/\.]+)',   # "DWG: ABC123" or "DWG= ABC123"
+            r'(?:sheet\s*[:\-=]\s*)([A-Z0-9\-/\.]+)',    # "SHEET: ABC123" or "SHEET= ABC123"
+            r'(?:drawing\s+(?:no\.?|number)\s*[:\-=]?\s*)([A-Z0-9\-/\.]+)',
+            r'(?:dwg\.?\s+(?:no\.?|#)\s*[:\-=]?\s*)([A-Z0-9\-/\.]+)',
+            r'(?:sheet\s+(?:no\.?|number)\s*[:\-=]?\s*)([A-Z0-9\-/\.]+)',
             r'([A-Z]{1,3}[0-9]{2,4}[A-Z]?)',  # Common format like A101, SK-001
             r'([0-9]{3,4}[A-Z]?)',  # Simple numeric like 001A
         ]
@@ -701,10 +761,10 @@ class DrawingProcessor:
                 break
         
         title_patterns = [
-            r'(?:title\s*:?\s*)([A-Za-z0-9\s\-,\.&()]+?)(?:\s*$|\s+(?:scale|date|rev|drawing))',
-            r'(?:project\s*:?\s*)([A-Za-z0-9\s\-,\.&()]+?)(?:\s*$|\s+(?:scale|date|rev|drawing))',
-            r'(?:description\s*:?\s*)([A-Za-z0-9\s\-,\.&()]+?)(?:\s*$|\s+(?:scale|date|rev|drawing))',
-            r'(?:job\s*:?\s*)([A-Za-z0-9\s\-,\.&()]+?)(?:\s*$|\s+(?:scale|date|rev|drawing))',
+            r'(?:title\s*[:\-=]\s*)([A-Za-z0-9\s\-,\.&()]+?)(?:\s*$|\s+(?:scale|date|rev|drawing))',
+            r'(?:project\s*[:\-=]\s*)([A-Za-z0-9\s\-,\.&()]+?)(?:\s*$|\s+(?:scale|date|rev|drawing))',
+            r'(?:description\s*[:\-=]\s*)([A-Za-z0-9\s\-,\.&()]+?)(?:\s*$|\s+(?:scale|date|rev|drawing))',
+            r'(?:job\s*[:\-=]\s*)([A-Za-z0-9\s\-,\.&()]+?)(?:\s*$|\s+(?:scale|date|rev|drawing))',
         ]
         
         for pattern in title_patterns:
@@ -714,10 +774,10 @@ class DrawingProcessor:
                 break
         
         revision_patterns = [
-            r'(?:revision\s*:?\s*)([A-Z0-9]+)',      # "Revision: A"
-            r'(?:rev\.?\s*:?\s*)([A-Z0-9]+)',        # "Rev: A" or "Rev. A"
+            r'(?:revision\s*[:\-=]\s*)([A-Z0-9]+)',      # "Revision: A" or "Revision= A"
+            r'(?:rev\.?\s*[:\-=]\s*)([A-Z0-9]+)',        # "Rev: A" or "Rev= A"
             r'\b([A-Z])\s*(?:rev|revision)',         # Single letter revisions
-            r'(?:issue\s*:?\s*)([A-Z0-9]+)',         # "Issue: 1"
+            r'(?:issue\s*[:\-=]\s*)([A-Z0-9]+)',         # "Issue: 1" or "Issue= 1"
             r'(?:^|\s)([A-Z])\s*$',                  # Single letter at end of line
         ]
         
@@ -750,10 +810,10 @@ class DrawingProcessor:
                 break
         
         project_patterns = [
-            r'(?:project\s*=\s*)([A-Za-z0-9\s\-,\.&()]+?)(?:\s*$|\s+(?:drawing|dwg|sheet|rev))',  # "PROJECT= Name"
-            r'(?:project\s*:?\s*)([A-Za-z0-9\s\-,\.&()]+?)(?:\s*$|\s+(?:drawing|dwg|sheet|rev))',
-            r'(?:client\s*:?\s*)([A-Za-z0-9\s\-,\.&()]+?)(?:\s*$|\s+(?:project|drawing))',
-            r'(?:job\s*:?\s*)([A-Za-z0-9\s\-,\.&()]+?)(?:\s*$|\s+(?:drawing|dwg))',
+            r'(?:project\s*[=:\-]\s*)([A-Za-z0-9\s\-,\.&()]+?)(?:\s*$|\s+(?:drawing|dwg|sheet|rev))',  # "PROJECT= Name" or "PROJECT: Name"
+            r'(?:client\s*[=:\-]\s*)([A-Za-z0-9\s\-,\.&()]+?)(?:\s*$|\s+(?:project|drawing))',
+            r'(?:job\s*[=:\-]\s*)([A-Za-z0-9\s\-,\.&()]+?)(?:\s*$|\s+(?:drawing|dwg))',
+            r'(?:for\s+)([A-Za-z0-9\s\-,\.&()]+?)(?:\s*$|\s+(?:drawing|dwg|sheet|rev))',  # "FOR Client Name"
         ]
         
         for pattern in project_patterns:
@@ -763,9 +823,11 @@ class DrawingProcessor:
                 break
         
         project_number_patterns = [
-            r'(?:project\s+(?:no\.?|number)\s*:?\s*)([A-Z0-9\-/]+)',
-            r'(?:job\s+(?:no\.?|number)\s*:?\s*)([A-Z0-9\-/]+)',
-            r'(?:contract\s+(?:no\.?|number)\s*:?\s*)([A-Z0-9\-/]+)',
+            r'(?:project\s+(?:no\.?|number)\s*[=:\-]?\s*)([A-Z0-9\-/]+)',
+            r'(?:job\s+(?:no\.?|number)\s*[=:\-]?\s*)([A-Z0-9\-/]+)',
+            r'(?:contract\s+(?:no\.?|number)\s*[=:\-]?\s*)([A-Z0-9\-/]+)',
+            r'(?:ref\.?\s*[=:\-]?\s*)([A-Z0-9\-/]+)',  # "Ref: 12345" or "Ref= 12345"
+            r'(?:reference\s*[=:\-]?\s*)([A-Z0-9\-/]+)',  # "Reference: 12345"
         ]
         
         for pattern in project_number_patterns:
