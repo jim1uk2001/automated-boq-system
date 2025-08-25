@@ -684,11 +684,14 @@ class DrawingProcessor:
         title_block_text = ' '.join(title_block_texts)
         
         drawing_number_patterns = [
-            r'(?:drawing\s+(?:no\.?|number)\s*:?\s*)([A-Z0-9\-/]+)',
-            r'(?:dwg\.?\s+(?:no\.?|#)\s*:?\s*)([A-Z0-9\-/]+)',
-            r'(?:sheet\s+(?:no\.?|number)\s*:?\s*)([A-Z0-9\-/]+)',
-            r'([A-Z]{1,3}[0-9]{2,4}[A-Z]?)',
-            r'([0-9]{3,4}[A-Z]?)',
+            r'(?:drawing\s*:?\s*)([A-Z0-9\-/\.]+)',  # "DRAWING: ABC123"
+            r'(?:dwg\.?\s*:?\s*)([A-Z0-9\-/\.]+)',   # "DWG: ABC123"
+            r'(?:sheet\s*:?\s*)([A-Z0-9\-/\.]+)',    # "SHEET: ABC123"
+            r'(?:drawing\s+(?:no\.?|number)\s*:?\s*)([A-Z0-9\-/\.]+)',
+            r'(?:dwg\.?\s+(?:no\.?|#)\s*:?\s*)([A-Z0-9\-/\.]+)',
+            r'(?:sheet\s+(?:no\.?|number)\s*:?\s*)([A-Z0-9\-/\.]+)',
+            r'([A-Z]{1,3}[0-9]{2,4}[A-Z]?)',  # Common format like A101, SK-001
+            r'([0-9]{3,4}[A-Z]?)',  # Simple numeric like 001A
         ]
         
         for pattern in drawing_number_patterns:
@@ -698,9 +701,10 @@ class DrawingProcessor:
                 break
         
         title_patterns = [
-            r'(?:title\s*:?\s*)([A-Za-z0-9\s\-,\.]+?)(?:\s+(?:scale|date|rev))',
-            r'(?:project\s*:?\s*)([A-Za-z0-9\s\-,\.]+?)(?:\s+(?:scale|date|rev))',
-            r'(?:description\s*:?\s*)([A-Za-z0-9\s\-,\.]+?)(?:\s+(?:scale|date|rev))',
+            r'(?:title\s*:?\s*)([A-Za-z0-9\s\-,\.&()]+?)(?:\s*$|\s+(?:scale|date|rev|drawing))',
+            r'(?:project\s*:?\s*)([A-Za-z0-9\s\-,\.&()]+?)(?:\s*$|\s+(?:scale|date|rev|drawing))',
+            r'(?:description\s*:?\s*)([A-Za-z0-9\s\-,\.&()]+?)(?:\s*$|\s+(?:scale|date|rev|drawing))',
+            r'(?:job\s*:?\s*)([A-Za-z0-9\s\-,\.&()]+?)(?:\s*$|\s+(?:scale|date|rev|drawing))',
         ]
         
         for pattern in title_patterns:
@@ -710,10 +714,11 @@ class DrawingProcessor:
                 break
         
         revision_patterns = [
-            r'(?:rev\.?\s*:?\s*)([A-Z0-9]+)',
-            r'(?:revision\s*:?\s*)([A-Z0-9]+)',
-            r'\b([A-Z])\s*(?:rev|revision)',
-            r'(?:issue\s*:?\s*)([A-Z0-9]+)',
+            r'(?:revision\s*:?\s*)([A-Z0-9]+)',      # "Revision: A"
+            r'(?:rev\.?\s*:?\s*)([A-Z0-9]+)',        # "Rev: A" or "Rev. A"
+            r'\b([A-Z])\s*(?:rev|revision)',         # Single letter revisions
+            r'(?:issue\s*:?\s*)([A-Z0-9]+)',         # "Issue: 1"
+            r'(?:^|\s)([A-Z])\s*$',                  # Single letter at end of line
         ]
         
         for pattern in revision_patterns:
@@ -745,9 +750,10 @@ class DrawingProcessor:
                 break
         
         project_patterns = [
-            r'(?:project\s*:?\s*)([A-Za-z0-9\s\-,\.]+?)(?:\s+(?:drawing|dwg|sheet))',
-            r'(?:client\s*:?\s*)([A-Za-z0-9\s\-,\.]+?)(?:\s+(?:project|drawing))',
-            r'(?:job\s*:?\s*)([A-Za-z0-9\s\-,\.]+?)(?:\s+(?:drawing|dwg))',
+            r'(?:project\s*=\s*)([A-Za-z0-9\s\-,\.&()]+?)(?:\s*$|\s+(?:drawing|dwg|sheet|rev))',  # "PROJECT= Name"
+            r'(?:project\s*:?\s*)([A-Za-z0-9\s\-,\.&()]+?)(?:\s*$|\s+(?:drawing|dwg|sheet|rev))',
+            r'(?:client\s*:?\s*)([A-Za-z0-9\s\-,\.&()]+?)(?:\s*$|\s+(?:project|drawing))',
+            r'(?:job\s*:?\s*)([A-Za-z0-9\s\-,\.&()]+?)(?:\s*$|\s+(?:drawing|dwg))',
         ]
         
         for pattern in project_patterns:
