@@ -24,6 +24,12 @@ class ProjectStatus(str, Enum):
     BIDDING_CLOSED = "bidding_closed"
     AWARDED = "awarded"
 
+class DrawingStatus(str, Enum):
+    UPLOADED = "uploaded"
+    PROCESSING = "processing"
+    PROCESSED = "processed"
+    FAILED = "failed"
+
 class BidStatus(str, Enum):
     DRAFT = "draft"
     SUBMITTED = "submitted"
@@ -44,22 +50,23 @@ class Drawing(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     project_id: str
     filename: str
-    file_path: str
+    file_path: Optional[str] = None
     file_type: str  # "pdf", "dwg", "dxf"
+    file_size: Optional[int] = None
+    file_data: Optional[bytes] = Field(default=None, exclude=True)
     drawing_type: Optional[DrawingType] = None
-    scale: Optional[float] = None
-    processed: bool = False
-    processing_status: str = "pending"  # "pending", "processing", "completed", "failed"
+    scale: Optional[str] = None
+    revision: Optional[str] = None
+    title: Optional[str] = None
+    status: DrawingStatus = DrawingStatus.UPLOADED
     error_message: Optional[str] = None
     uploaded_at: datetime = Field(default_factory=datetime.utcnow)
     processed_at: Optional[datetime] = None
-    drawing_title: Optional[str] = None
-    revision_number: Optional[str] = None
-    revision_date: Optional[datetime] = None
-    drawing_number: Optional[str] = None
     quality_score: Optional[int] = None
     architect_queries: List[Dict[str, Any]] = []
     quality_issues: List[str] = []
+    processed_data: Optional[Dict[str, Any]] = None  # Store extracted elements, dimensions, text_annotations
+    building_types: Optional[Dict[str, Any]] = None  # Store detected building types
 
 class BOQItem(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))

@@ -4,6 +4,12 @@ from openpyxl.worksheet.protection import SheetProtection
 from typing import List, Dict, Any, Optional
 import io
 from ..models import BOQItem, Project
+from reportlab.lib.pagesizes import letter, A4
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib import colors
+from reportlab.lib.units import inch
+from datetime import datetime
 
 class ExcelGenerator:
     def __init__(self):
@@ -121,8 +127,21 @@ class ExcelGenerator:
         current_row = header_row + 1
         total_amount_formula_cells = []
         
-        for idx, item in enumerate(boq_items, 1):
-            cell = ws.cell(row=current_row, column=1, value=idx)
+        item_idx = 1
+        for item in boq_items:
+            if item.item_code == "SECTION":
+                cell = ws.cell(row=current_row, column=1)
+                cell.value = item.description
+                cell.font = Font(bold=True, size=12)
+                ws.merge_cells(start_row=current_row, start_column=1, end_row=current_row, end_column=9)
+                for col in range(1, 10):
+                    cell = ws.cell(row=current_row, column=col)
+                    cell.fill = PatternFill(start_color="AAAAAA", end_color="AAAAAA", fill_type="solid")
+                    cell.alignment = Alignment(horizontal='center')
+                current_row += 1
+                continue
+            
+            cell = ws.cell(row=current_row, column=1, value=item_idx)
             cell.font = self.data_font
             cell.border = self.border
             cell.protection = Protection(locked=True)
@@ -178,6 +197,7 @@ class ExcelGenerator:
             cell.protection = Protection(locked=True)
             
             current_row += 1
+            item_idx += 1
         
         total_row = current_row + 1
         ws.cell(row=total_row, column=6, value="TOTAL:").font = Font(bold=True)
@@ -229,6 +249,151 @@ class ExcelGenerator:
         wb.save(excel_buffer)
         excel_buffer.seek(0)
         return excel_buffer.getvalue()
+    
+    def generate_boq_pdf(self, boq_items: List[Dict[str, Any]], project_name: str, 
+                        drawings: List[Dict[str, Any]] = None, 
+                        measurement_standard: str = "SMM7") -> bytes:
+        """Generate a PDF version of the BOQ"""
+        buffer = io.BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=72, leftMargin=72,
+                              topMargin=72, bottomMargin=18)
+        
+        styles = getSampleStyleSheet()
+        title_style = ParagraphStyle(
+            'CustomTitle',
+            parent=styles['Heading1'],
+            fontSize=18,
+            spaceAfter=30,
+            alignment=1
+        )
+        
+        heading_style = ParagraphStyle(
+            'CustomHeading',
+            parent=styles['Heading2'],
+            fontSize=14,
+            spaceAfter=12
+        )
+        
+        story = []
+        
+        story.append(Paragraph(f"Bill of Quantities - {project_name}", title_style))
+        story.append(Spacer(1, 12))
+        
+        story.append(Paragraph("Project Information", heading_style))
+        project_info = [
+            ['Project Name:', project_name],
+            ['Measurement Standard:', measurement_standard],
+            ['Generated:', datetime.now().strftime('%d/%m/%Y %H:%M')],
+            ['Total Items:', str(len(boq_items))]
+        ]
+        
+        project_table = Table(project_info, colWidths=[2*inch, 4*inch])
+        project_table.setStyle(TableStyle([
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, -1), 10),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+        ]))
+        story.append(project_table)
+        story.append(Spacer(1, 20))
+        
+        if drawings:
+            story.append(Paragraph("Drawing Register", heading_style))
+            drawing_data = [['Drawing Title', 'Revision', 'Type', 'Status']]
+            for drawing in drawings:
+                drawing_data.append([
+                    drawing.get('filename', 'N/A'),
+                    drawing.get('revision', 'A'),
+                    drawing.get('file_type', 'PDF').upper(),
+                    drawing.get('status', 'Processed')
+                ])
+            
+            drawing_table = Table(drawing_data, colWidths=[2.5*inch, 1*inch, 1*inch, 1.5*inch])
+            drawing_table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, -1), 9),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+                ('GRID', (0, 0), (-1, -1), 1, colors.black)
+            ]))
+            story.append(drawing_table)
+            story.append(PageBreak())
+        
+        story.append(Paragraph("Bill of Quantities", heading_style))
+        
+        trades = {}
+        for item in boq_items:
+            trade = item.get('trade', 'General')
+            if trade not in trades:
+                trades[trade] = []
+            trades[trade].append(item)
+        
+        for trade, items in trades.items():
+            story.append(Paragraph(f"{trade} Works", heading_style))
+            
+            boq_data = [['Item', 'Description', 'Unit', 'Quantity', 'Rate (£)', 'Amount (£)']]
+            
+            trade_total = 0
+            for i, item in enumerate(items, 1):
+                quantity = float(item.get('quantity', 0))
+                rate = float(item.get('unit_rate', 0))
+                amount = quantity * rate
+                trade_total += amount
+                
+                boq_data.append([
+                    f"{trade[0]}.{i:02d}",
+                    item.get('description', 'N/A'),
+                    item.get('unit', 'Nr'),
+                    f"{quantity:.2f}",
+                    f"{rate:.2f}",
+                    f"{amount:.2f}"
+                ])
+            
+            boq_data.append(['', f'Sub-total for {trade}', '', '', '', f"{trade_total:.2f}"])
+            
+            boq_table = Table(boq_data, colWidths=[0.8*inch, 2.5*inch, 0.8*inch, 1*inch, 1*inch, 1*inch])
+            boq_table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('ALIGN', (1, 1), (1, -2), 'LEFT'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, -1), 8),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+                ('GRID', (0, 0), (-1, -1), 1, colors.black),
+                ('BACKGROUND', (0, -1), (-1, -1), colors.lightgrey),
+            ]))
+            story.append(boq_table)
+            story.append(Spacer(1, 20))
+        
+        grand_total = sum(float(item.get('quantity', 0)) * float(item.get('unit_rate', 0)) for item in boq_items)
+        total_data = [['', '', '', '', 'GRAND TOTAL:', f"£{grand_total:.2f}"]]
+        total_table = Table(total_data, colWidths=[0.8*inch, 2.5*inch, 0.8*inch, 1*inch, 1*inch, 1*inch])
+        total_table.setStyle(TableStyle([
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, -1), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, -1), 12),
+            ('BACKGROUND', (0, 0), (-1, -1), colors.lightblue),
+            ('GRID', (4, 0), (-1, -1), 2, colors.black),
+        ]))
+        story.append(total_table)
+        
+        story.append(Spacer(1, 30))
+        footer_style = ParagraphStyle(
+            'Footer',
+            parent=styles['Normal'],
+            fontSize=8,
+            alignment=1
+        )
+        story.append(Paragraph("Generated by Bojim BOQ Production Software", footer_style))
+        story.append(Paragraph(f"Compliant with {measurement_standard} Standards", footer_style))
+        
+        doc.build(story)
+        buffer.seek(0)
+        return buffer.getvalue()
 
     def generate_bid_comparison_excel(self, project: Project, bids_data: List[Dict[str, Any]]) -> bytes:
         """Generate Excel comparison of all bids for client review"""

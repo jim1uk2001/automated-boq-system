@@ -197,6 +197,8 @@ class DrawingProcessor:
         
         try:
             ocr_results = self.easyocr_reader.readtext(image)
+            building_types = {}
+            
             for (bbox, text, confidence) in ocr_results:
                 if confidence > 0.5:  # Filter low confidence results
                     bbox_converted = [[float(coord[0]), float(coord[1])] for coord in bbox]
@@ -206,12 +208,55 @@ class DrawingProcessor:
                         'confidence': float(confidence)
                     })
                     
+                    import re
+                    text_lower = text.lower()
+                    
+                    if re.search(r'type\s+[a-z]', text_lower) or re.search(r'house\s+type\s+[a-z]', text_lower):
+                        building_type = re.search(r'type\s+([a-z])', text_lower)
+                        if building_type:
+                            type_name = f"Type {building_type.group(1).upper()}"
+                            building_types[type_name] = bbox_converted
+                    
+                    elif re.search(r'office\s+building|commercial\s+building|retail\s+building', text_lower):
+                        if 'office' in text_lower:
+                            building_types["Office Building"] = bbox_converted
+                        elif 'retail' in text_lower:
+                            building_types["Retail Building"] = bbox_converted
+                        else:
+                            building_types["Commercial Building"] = bbox_converted
+                    
+                    elif re.search(r'hospital|medical\s+center|clinic', text_lower):
+                        building_types["Hospital/Medical"] = bbox_converted
+                    elif re.search(r'school|university|college|educational', text_lower):
+                        building_types["Educational"] = bbox_converted
+                    elif re.search(r'police\s+station|fire\s+station|government', text_lower):
+                        building_types["Government/Public Safety"] = bbox_converted
+                    
+                    elif re.search(r'warehouse|factory|industrial|manufacturing', text_lower):
+                        building_types["Industrial"] = bbox_converted
+                    
+                    elif re.search(r'mixed\s+use|multi\s+use|residential.*commercial|commercial.*residential', text_lower):
+                        building_types["Mixed-Use Development"] = bbox_converted
+                    
+                    elif re.search(r'tower|high\s+rise|multi\s+story|apartment\s+building', text_lower):
+                        if 'apartment' in text_lower:
+                            building_types["Apartment Building"] = bbox_converted
+                        else:
+                            building_types["High-Rise Building"] = bbox_converted
+                    
+                    elif re.search(r'class\s+[abc]\s+building|building\s+class\s+[abc]', text_lower):
+                        class_match = re.search(r'class\s+([abc])', text_lower)
+                        if class_match:
+                            building_types[f"Class {class_match.group(1).upper()} Building"] = bbox_converted
+                    
                     if self._is_dimension_text(text):
                         results['dimensions'].append({
                             'text': text,
                             'bbox': bbox_converted,
                             'value': self._extract_dimension_value(text)
                         })
+                        
+            results['building_types'] = building_types
         except Exception as e:
             logger.warning(f"OCR failed: {str(e)}")
         

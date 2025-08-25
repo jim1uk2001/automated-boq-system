@@ -1,5 +1,6 @@
 from typing import List, Dict, Any, Optional
 import uuid
+import numpy as np
 from ..models import BOQItem, MeasurementStandard, Drawing
 from ..schemas import BOQItemResponse
 
@@ -19,33 +20,77 @@ class BOQGenerator:
         
         print(f"DEBUG: BOQ Generator processing {len(drawings_data)} drawings")
         
+        building_type_drawings = {}
+        
         for drawing_data in drawings_data:
             drawing_id = drawing_data.get('drawing_id')
             elements = drawing_data.get('elements', [])
             drawing_type = drawing_data.get('drawing_type')
+            building_types = drawing_data.get('building_types', {})
             
             if not drawing_type or drawing_type == 'unknown' or drawing_type == 'site':
                 drawing_type = 'architectural'
             
-            if drawing_type == 'architectural':
-                items = self._process_architectural_elements(
-                    project_id, drawing_id, elements, rules
-                )
-                boq_items.extend(items)
-            elif drawing_type == 'structural':
-                items = self._process_structural_elements(
-                    project_id, drawing_id, elements, rules
-                )
-                boq_items.extend(items)
-            elif drawing_type == 'mep':
-                items = self._process_mep_elements(
-                    project_id, drawing_id, elements, rules
-                )
-                boq_items.extend(items)
+            if building_types:
+                for type_name, _ in building_types.items():
+                    if type_name not in building_type_drawings:
+                        building_type_drawings[type_name] = []
+                    building_type_drawings[type_name].append({
+                        'drawing_id': drawing_id,
+                        'elements': elements,
+                        'drawing_type': drawing_type
+                    })
+            else:
+                if "General" not in building_type_drawings:
+                    building_type_drawings["General"] = []
+                building_type_drawings["General"].append({
+                    'drawing_id': drawing_id,
+                    'elements': elements,
+                    'drawing_type': drawing_type
+                })
+        
+        for building_type, type_drawings in building_type_drawings.items():
+            section_id = str(uuid.uuid4())
+            boq_items.append(BOQItem(
+                id=section_id,
+                project_id=project_id,
+                drawing_id=None,
+                item_code=f"SECTION",
+                description=f"BUILDING {building_type}",
+                unit="",
+                quantity=0,
+                category="section",
+                trade="general",
+                measurement_standard=standard,
+                notes=f"Items for {building_type}"
+            ))
+            
+            for drawing_data in type_drawings:
+                drawing_id = drawing_data.get('drawing_id')
+                elements = drawing_data.get('elements', [])
+                drawing_type = drawing_data.get('drawing_type')
+                
+                if drawing_type == 'architectural':
+                    items = self._process_architectural_elements(
+                        project_id, drawing_id, elements, rules, building_type
+                    )
+                    boq_items.extend(items)
+                elif drawing_type == 'structural':
+                    items = self._process_structural_elements(
+                        project_id, drawing_id, elements, rules
+                    )
+                    boq_items.extend(items)
+                elif drawing_type == 'mep':
+                    items = self._process_mep_elements(
+                        project_id, drawing_id, elements, rules
+                    )
+                    boq_items.extend(items)
+        
         return boq_items
 
     def _process_architectural_elements(self, project_id: str, drawing_id: str, 
-                                      elements: List[Dict], rules: Dict) -> List[BOQItem]:
+                                      elements: List[Dict], rules: Dict, 
+                                      building_type: str = "General") -> List[BOQItem]:
         """Process architectural elements into BOQ items"""
         boq_items = []
         
@@ -54,6 +99,8 @@ class BOQGenerator:
             elem_type = e.get('type', 'unknown')
             element_types[elem_type] = element_types.get(elem_type, 0) + 1
         print(f"DEBUG: Element types in drawing: {element_types}")
+        
+        building_config = self._get_building_type_config(building_type)
         
         all_lines = [e for e in elements if e.get('type') == 'line']
         all_circles = [e for e in elements if e.get('type') == 'circle']
@@ -163,14 +210,20 @@ class BOQGenerator:
                 category="concrete", trade="structural", measurement_standard=MeasurementStandard.SMM7
             ))
         
-        electrical_points = [e for e in all_circles if 10 < e.get('radius', 0) <= 50]  # Small circles
+        electrical_symbols = [e for e in all_circles if 10 < e.get('radius', 0) <= 50]
+        
+        # This prevents counting annotation circles and dimension markers as sockets
+        electrical_points = self._group_electrical_symbols(electrical_symbols)
+        
         electrical_conduits = [e for e in all_lines if 100 < e.get('length', 0) <= 500]  # Short lines
         
         if electrical_points:
+            socket_count = self._calculate_electrical_sockets(electrical_points, building_type, building_config)
+            
             boq_items.append(BOQItem(
                 project_id=project_id, drawing_id=drawing_id,
                 item_code="V21.1.1.1", description="Electrical socket outlets",
-                unit="nr", quantity=len(electrical_points),
+                unit="nr", quantity=socket_count,
                 category="electrical", trade="electrical", measurement_standard=MeasurementStandard.SMM7
             ))
         
@@ -214,8 +267,146 @@ class BOQGenerator:
                 category="excavation", trade="civil", measurement_standard=MeasurementStandard.SMM7
             ))
         
-        print(f"DEBUG: Enhanced architectural processing created {len(boq_items)} BOQ items")
+        print(f"DEBUG: Enhanced architectural processing created {len(boq_items)} BOQ items for {building_type}")
         return boq_items
+        
+    def _group_electrical_symbols(self, symbols: List[Dict]) -> List[Dict]:
+        """Group electrical symbols by proximity to identify actual electrical points.
+        This prevents counting annotation circles and dimension markers as sockets."""
+        if not symbols:
+            return []
+            
+        filtered_symbols = []
+        for symbol in symbols:
+            radius = symbol.get('radius', 0)
+            if 12 <= radius <= 25:  # More restrictive range for actual electrical symbols
+                filtered_symbols.append(symbol)
+        
+        if not filtered_symbols:
+            return []
+            
+        grouped_symbols = []
+        processed = set()
+        
+        for i, symbol in enumerate(filtered_symbols):
+            if i in processed:
+                continue
+                
+            group = [symbol]
+            processed.add(i)
+            
+            for j, other in enumerate(filtered_symbols):
+                if j in processed:
+                    continue
+                    
+                dist = np.sqrt((symbol['center'][0] - other['center'][0])**2 + 
+                              (symbol['center'][1] - other['center'][1])**2)
+                if dist < 50:  # 50 pixel threshold for grouping nearby symbols
+                    group.append(other)
+                    processed.add(j)
+                    
+            grouped_symbols.append(group[0])  # Use the first symbol in each group
+            
+        return grouped_symbols
+    
+    def _get_building_type_config(self, building_type: str) -> Dict[str, Any]:
+        """Get configuration parameters for different building types"""
+        configs = {
+            "General": {
+                "socket_multiplier": 1.0,
+                "area_multiplier": 1.0,
+                "complexity_factor": 1.0,
+                "typical_floors": 1
+            },
+            "Type A": {
+                "socket_multiplier": 0.8,
+                "area_multiplier": 1.0,
+                "complexity_factor": 1.0,
+                "typical_floors": 2,
+                "sockets_per_house": 25
+            },
+            "Type B": {
+                "socket_multiplier": 1.0,
+                "area_multiplier": 1.2,
+                "complexity_factor": 1.1,
+                "typical_floors": 2,
+                "sockets_per_house": 30
+            },
+            "Office Building": {
+                "socket_multiplier": 2.5,
+                "area_multiplier": 1.0,
+                "complexity_factor": 1.3,
+                "typical_floors": 5,
+                "sockets_per_100sqm": 40
+            },
+            "Hospital/Medical": {
+                "socket_multiplier": 4.0,
+                "area_multiplier": 1.0,
+                "complexity_factor": 2.0,
+                "typical_floors": 3,
+                "sockets_per_100sqm": 80,
+                "special_systems": ["medical_gas", "nurse_call", "emergency_power"]
+            },
+            "Educational": {
+                "socket_multiplier": 1.8,
+                "area_multiplier": 1.0,
+                "complexity_factor": 1.4,
+                "typical_floors": 2,
+                "sockets_per_100sqm": 30
+            },
+            "Retail Building": {
+                "socket_multiplier": 1.5,
+                "area_multiplier": 1.0,
+                "complexity_factor": 1.2,
+                "typical_floors": 1,
+                "sockets_per_100sqm": 25
+            },
+            "Industrial": {
+                "socket_multiplier": 3.0,
+                "area_multiplier": 1.0,
+                "complexity_factor": 1.8,
+                "typical_floors": 1,
+                "sockets_per_100sqm": 15,
+                "special_systems": ["three_phase_power", "heavy_duty_outlets"]
+            },
+            "Mixed-Use Development": {
+                "socket_multiplier": 2.0,
+                "area_multiplier": 1.3,
+                "complexity_factor": 1.6,
+                "typical_floors": 8,
+                "sockets_per_100sqm": 35,
+                "mixed_zones": ["residential", "commercial", "retail"]
+            },
+            "High-Rise Building": {
+                "socket_multiplier": 2.2,
+                "area_multiplier": 1.0,
+                "complexity_factor": 1.8,
+                "typical_floors": 20,
+                "sockets_per_100sqm": 45,
+                "special_systems": ["fire_alarm", "elevator_systems", "building_management"]
+            }
+        }
+        
+        return configs.get(building_type, configs["General"])
+    
+    def _calculate_electrical_sockets(self, electrical_points: List[Dict], 
+                                    building_type: str, config: Dict[str, Any]) -> int:
+        """Calculate realistic electrical socket count based on building type"""
+        detected_count = len(electrical_points)
+        
+        if building_type in ["Type A", "Type B"]:
+            # Residential houses - calculate per house
+            houses_count = max(1, detected_count // config.get("sockets_per_house", 25))
+            return min(houses_count * config.get("sockets_per_house", 25), 120)
+        
+        elif "sockets_per_100sqm" in config:
+            estimated_area = detected_count * 10  # Rough area estimation
+            area_based_sockets = (estimated_area / 100) * config["sockets_per_100sqm"]
+            return int(min(area_based_sockets * config["socket_multiplier"], 500))
+        
+        else:
+            base_count = min(detected_count, 100)
+            return int(base_count * config["socket_multiplier"])
 
     def _process_structural_elements(self, project_id: str, drawing_id: str, 
                                    elements: List[Dict], rules: Dict) -> List[BOQItem]:
@@ -293,17 +484,27 @@ class BOQGenerator:
         return boq_items
 
     def _get_smm7_rules(self) -> Dict[str, Any]:
-        """SMM7 measurement rules and item codes"""
+        """SMM7 measurement rules and item codes based on CAWS"""
         return {
-            'walls': {
-                'code': 'F10.1.1.1',
-                'description': 'Brick/block walling, stretcher bond',
+            'preliminaries': {
+                'code': 'A10.1.1.1',
+                'description': 'Project preliminaries',
+                'unit': 'item'
+            },
+            'excavation': {
+                'code': 'D20.1.1.1',
+                'description': 'Excavation for foundations',
+                'unit': 'm³'
+            },
+            'site_preparation': {
+                'code': 'D20.2.1.1',
+                'description': 'Site preparation and clearance',
                 'unit': 'm²'
             },
-            'flooring': {
-                'code': 'M20.1.1.1',
-                'description': 'Floor finishes, ceramic tiles',
-                'unit': 'm²'
+            'foundations': {
+                'code': 'E10.1.1.1',
+                'description': 'Concrete foundations',
+                'unit': 'm³'
             },
             'beams': {
                 'code': 'E20.1.1.1',
@@ -315,6 +516,151 @@ class BOQGenerator:
                 'description': 'Reinforced concrete columns',
                 'unit': 'nr'
             },
+            'slabs': {
+                'code': 'E10.2.1.1',
+                'description': 'Concrete floor slabs',
+                'unit': 'm³'
+            },
+            'external_walls': {
+                'code': 'F10.1.1.1',
+                'description': 'External brick/block walling, stretcher bond',
+                'unit': 'm²'
+            },
+            'internal_walls': {
+                'code': 'F10.2.1.1',
+                'description': 'Internal brick/block walling',
+                'unit': 'm²'
+            },
+            'cavity_walls': {
+                'code': 'F10.1.2.1',
+                'description': 'Cavity wall construction',
+                'unit': 'm²'
+            },
+            'roof_structure': {
+                'code': 'G20.1.1.1',
+                'description': 'Timber roof structure',
+                'unit': 'm²'
+            },
+            'floor_structure': {
+                'code': 'G20.2.1.1',
+                'description': 'Timber floor structure',
+                'unit': 'm²'
+            },
+            'roof_covering': {
+                'code': 'H60.1.1.1',
+                'description': 'Roof covering and structure',
+                'unit': 'm²'
+            },
+            'external_cladding': {
+                'code': 'H20.1.1.1',
+                'description': 'External wall cladding',
+                'unit': 'm²'
+            },
+            'damp_proof': {
+                'code': 'J40.1.1.1',
+                'description': 'Damp proof course/membrane',
+                'unit': 'm²'
+            },
+            'waterproofing': {
+                'code': 'J20.1.1.1',
+                'description': 'Waterproofing systems',
+                'unit': 'm²'
+            },
+            'partitions': {
+                'code': 'K10.1.1.1',
+                'description': 'Partition walling, lightweight',
+                'unit': 'm²'
+            },
+            'dry_lining': {
+                'code': 'K10.2.1.1',
+                'description': 'Dry lining to walls',
+                'unit': 'm²'
+            },
+            'doors': {
+                'code': 'L10.1.1.1',
+                'description': 'Door openings and frames',
+                'unit': 'nr'
+            },
+            'windows': {
+                'code': 'L10.2.1.1',
+                'description': 'Window openings and frames',
+                'unit': 'nr'
+            },
+            'glazing': {
+                'code': 'L40.1.1.1',
+                'description': 'Glazing systems',
+                'unit': 'm²'
+            },
+            'floor_finishes': {
+                'code': 'M20.1.1.1',
+                'description': 'Floor finishes, ceramic tiles',
+                'unit': 'm²'
+            },
+            'wall_finishes': {
+                'code': 'M20.2.1.1',
+                'description': 'Wall finishes',
+                'unit': 'm²'
+            },
+            'ceiling_finishes': {
+                'code': 'M20.3.1.1',
+                'description': 'Ceiling finishes',
+                'unit': 'm²'
+            },
+            'painting': {
+                'code': 'M60.1.1.1',
+                'description': 'Painting and decorating',
+                'unit': 'm²'
+            },
+            'kitchen_fittings': {
+                'code': 'N10.1.1.1',
+                'description': 'Kitchen fittings and equipment',
+                'unit': 'item'
+            },
+            'bathroom_fittings': {
+                'code': 'N13.1.1.1',
+                'description': 'Sanitary appliances',
+                'unit': 'nr'
+            },
+            'sundries': {
+                'code': 'P10.1.1.1',
+                'description': 'Building fabric sundries',
+                'unit': 'item'
+            },
+            'ironmongery': {
+                'code': 'P20.1.1.1',
+                'description': 'Door and window ironmongery',
+                'unit': 'item'
+            },
+            'drainage': {
+                'code': 'R10.1.1.1',
+                'description': 'Sanitary fittings and fixtures',
+                'unit': 'nr'
+            },
+            'waste_disposal': {
+                'code': 'R11.1.1.1',
+                'description': 'Waste disposal systems',
+                'unit': 'm'
+            },
+            'water_supply': {
+                'code': 'S10.1.1.1',
+                'description': 'Water supply systems',
+                'unit': 'm'
+            },
+            'gas_supply': {
+                'code': 'S11.1.1.1',
+                'description': 'Gas supply systems',
+                'unit': 'm'
+            },
+            'heating': {
+                'code': 'T10.1.1.1',
+                'description': 'Heating systems',
+                'unit': 'item'
+            },
+            'ventilation': {
+                'code': 'T31.1.1.1',
+                'description': 'Ventilation systems',
+                'unit': 'item'
+            },
             'conduit': {
                 'code': 'V20.1.1.1',
                 'description': 'PVC conduit installation',
@@ -323,6 +669,16 @@ class BOQGenerator:
             'points': {
                 'code': 'V21.1.1.1',
                 'description': 'Electrical socket outlets',
+                'unit': 'nr'
+            },
+            'lighting': {
+                'code': 'V22.1.1.1',
+                'description': 'Lighting fixtures',
+                'unit': 'nr'
+            },
+            'electrical_panels': {
+                'code': 'V10.1.1.1',
+                'description': 'Electrical distribution boards',
                 'unit': 'nr'
             }
         }
