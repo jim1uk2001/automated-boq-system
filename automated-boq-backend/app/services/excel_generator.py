@@ -159,18 +159,15 @@ class ExcelGenerator:
         
         warning_row = current_row + 2
         drawing_ws.cell(row=warning_row, column=1, value="IMPORTANT: Contractors must verify they are pricing the correct drawing revisions listed above.")
-        drawing_ws.cell(row=warning_row, column=1).font = Font(bold=True, color="FF0000", size=12)
-        drawing_ws.cell(row=warning_row, column=1).fill = PatternFill(start_color="FFCCCC", end_color="FFCCCC", fill_type="solid")
+        drawing_ws.cell(row=warning_row, column=1).font = Font(bold=True, size=12)
         drawing_ws.merge_cells(f'A{warning_row}:G{warning_row}')
         
         drawing_ws.cell(row=warning_row + 1, column=1, value="Any discrepancies between BOQ quantities and drawing revisions must be reported before bid submission.")
-        drawing_ws.cell(row=warning_row + 1, column=1).font = Font(bold=True, color="FF0000", size=12)
-        drawing_ws.cell(row=warning_row + 1, column=1).fill = PatternFill(start_color="FFCCCC", end_color="FFCCCC", fill_type="solid")
+        drawing_ws.cell(row=warning_row + 1, column=1).font = Font(bold=True, size=12)
         drawing_ws.merge_cells(f'A{warning_row + 1}:G{warning_row + 1}')
         
         drawing_ws.cell(row=warning_row + 2, column=1, value="This register prevents disputes from superseded drawings that could lead to arbitration or litigation.")
-        drawing_ws.cell(row=warning_row + 2, column=1).font = Font(bold=True, color="FF0000", size=12)
-        drawing_ws.cell(row=warning_row + 2, column=1).fill = PatternFill(start_color="FFCCCC", end_color="FFCCCC", fill_type="solid")
+        drawing_ws.cell(row=warning_row + 2, column=1).font = Font(bold=True, size=12)
         drawing_ws.merge_cells(f'A{warning_row + 2}:G{warning_row + 2}')
         
         column_widths = [15, 30, 10, 12, 15, 25, 12]
