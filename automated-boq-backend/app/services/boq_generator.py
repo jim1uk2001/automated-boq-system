@@ -20,73 +20,46 @@ class BOQGenerator:
         
         print(f"DEBUG: BOQ Generator processing {len(drawings_data)} drawings")
         
-        building_type_drawings = {}
+        processed_drawings = set()
         
         for drawing_data in drawings_data:
             drawing_id = drawing_data.get('drawing_id')
             elements = drawing_data.get('elements', [])
             drawing_type = drawing_data.get('drawing_type')
-            building_types = drawing_data.get('building_types', {})
+            
+            if drawing_id in processed_drawings:
+                continue
+            processed_drawings.add(drawing_id)
             
             if not drawing_type or drawing_type == 'unknown' or drawing_type == 'site':
                 drawing_type = 'architectural'
             
-            if building_types:
-                for type_name, _ in building_types.items():
-                    if type_name not in building_type_drawings:
-                        building_type_drawings[type_name] = []
-                    building_type_drawings[type_name].append({
-                        'drawing_id': drawing_id,
-                        'elements': elements,
-                        'drawing_type': drawing_type
-                    })
-            else:
-                if "General" not in building_type_drawings:
-                    building_type_drawings["General"] = []
-                building_type_drawings["General"].append({
-                    'drawing_id': drawing_id,
-                    'elements': elements,
-                    'drawing_type': drawing_type
-                })
-        
-        for building_type, type_drawings in building_type_drawings.items():
-            section_id = str(uuid.uuid4())
-            boq_items.append(BOQItem(
-                id=section_id,
-                project_id=project_id,
-                drawing_id=None,
-                item_code=f"SECTION",
-                description=f"BUILDING {building_type}",
-                unit="",
-                quantity=0,
-                category="section",
-                trade="general",
-                measurement_standard=standard,
-                notes=f"Items for {building_type}"
-            ))
+            print(f"DEBUG: Processing drawing {drawing_id} with {len(elements)} elements")
             
-            for drawing_data in type_drawings:
-                drawing_id = drawing_data.get('drawing_id')
-                elements = drawing_data.get('elements', [])
-                drawing_type = drawing_data.get('drawing_type')
-                
-                if drawing_type == 'architectural':
-                    items = self._process_architectural_elements(
-                        project_id, drawing_id, elements, rules, building_type,
-                        drawing_data.get('room_types', {}),
-                        drawing_data.get('wall_finishes', {})
-                    )
-                    boq_items.extend(items)
-                elif drawing_type == 'structural':
-                    items = self._process_structural_elements(
-                        project_id, drawing_id, elements, rules
-                    )
-                    boq_items.extend(items)
-                elif drawing_type == 'mep':
-                    items = self._process_mep_elements(
-                        project_id, drawing_id, elements, rules
-                    )
-                    boq_items.extend(items)
+            if drawing_type == 'architectural' or str(drawing_type) == 'DrawingType.ARCHITECTURAL':
+                items = self._process_architectural_elements(
+                    project_id, drawing_id, elements, rules, "General",
+                    drawing_data.get('room_types', {}),
+                    drawing_data.get('wall_finishes', {})
+                )
+                boq_items.extend(items)
+            elif drawing_type == 'structural':
+                items = self._process_structural_elements(
+                    project_id, drawing_id, elements, rules
+                )
+                boq_items.extend(items)
+            elif drawing_type == 'mep':
+                items = self._process_mep_elements(
+                    project_id, drawing_id, elements, rules
+                )
+                boq_items.extend(items)
+            else:
+                items = self._process_architectural_elements(
+                    project_id, drawing_id, elements, rules, "General",
+                    drawing_data.get('room_types', {}),
+                    drawing_data.get('wall_finishes', {})
+                )
+                boq_items.extend(items)
         
         return boq_items
 

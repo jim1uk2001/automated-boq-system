@@ -1,0 +1,899 @@
+BOJIM BOQ PRODUCTION SOFTWARE - CODE ANALYSIS
+============================================
+
+This document contains the two key files causing BOQ generation issues:
+1. Duplicate items (items 31-33 repeating as 34-36 and 37-39)
+2. Incorrect formatting with horizontal lines and colors
+
+FILE 1: boq_generator.py
+========================
+
+```python
+from typing import List, Dict, Any, Optional
+import uuid
+from ..models import BOQItem, Drawing, MeasurementStandard, DrawingType
+from .drawing_processor import DrawingProcessor
+import logging
+
+logger = logging.getLogger(__name__)
+
+class BOQGenerator:
+    def __init__(self, measurement_standard: MeasurementStandard = MeasurementStandard.SMM7):
+        self.measurement_standard = measurement_standard
+        self.drawing_processor = DrawingProcessor()
+        self.processed_drawings = set()  # Track processed drawings to prevent duplicates
+        
+        # Initialize measurement standard specific rules
+        self._initialize_measurement_rules()
+    
+    def _initialize_measurement_rules(self):
+        """Initialize measurement rules based on selected standard"""
+        if self.measurement_standard == MeasurementStandard.SMM7:
+            self.measurement_rules = {
+                'concrete': {'unit': 'm³', 'deductions': True},
+                'masonry': {'unit': 'm²', 'deductions': False},
+                'excavation': {'unit': 'm³', 'deductions': True},
+                'roofing': {'unit': 'm²', 'deductions': False}
+            }
+        elif self.measurement_standard == MeasurementStandard.RICS_NRM:
+            self.measurement_rules = {
+                'concrete': {'unit': 'm³', 'deductions': True},
+                'masonry': {'unit': 'm²', 'deductions': True},
+                'excavation': {'unit': 'm³', 'deductions': True},
+                'roofing': {'unit': 'm²', 'deductions': True}
+            }
+        else:  # CESMM
+            self.measurement_rules = {
+                'concrete': {'unit': 'm³', 'deductions': False},
+                'masonry': {'unit': 'm²', 'deductions': False},
+                'excavation': {'unit': 'm³', 'deductions': False},
+                'roofing': {'unit': 'm²', 'deductions': False}
+            }
+
+    async def generate_boq(self, drawings: List[Drawing]) -> List[BOQItem]:
+        """Generate BOQ items from processed drawings"""
+        boq_items = []
+        
+        # Process each drawing only once
+        for drawing in drawings:
+            drawing_id = str(drawing.id) if hasattr(drawing, 'id') else drawing.filename
+            
+            if drawing_id in self.processed_drawings:
+                logger.info(f"Skipping already processed drawing: {drawing.filename}")
+                continue
+                
+            self.processed_drawings.add(drawing_id)
+            
+            logger.info(f"Processing drawing: {drawing.filename}")
+            
+            # Process the drawing to extract elements
+            processed_data = await self.drawing_processor.process_drawing(
+                drawing.file_path if hasattr(drawing, 'file_path') else f"drawings/{drawing.filename}",
+                drawing.drawing_type
+            )
+            
+            # Generate BOQ items from processed data
+            drawing_items = self._generate_items_from_drawing(processed_data, drawing)
+            boq_items.extend(drawing_items)
+            
+            logger.info(f"Generated {len(drawing_items)} items from {drawing.filename}")
+        
+        return boq_items
+
+    def _generate_items_from_drawing(self, processed_data: Dict[str, Any], drawing: Drawing) -> List[BOQItem]:
+        """Generate BOQ items from a single processed drawing"""
+        items = []
+        
+        # Extract elements from processed data
+        elements = processed_data.get('elements', [])
+        
+        if drawing.drawing_type == DrawingType.ARCHITECTURAL:
+            items.extend(self._process_architectural_elements(elements, drawing))
+        elif drawing.drawing_type == DrawingType.STRUCTURAL:
+            items.extend(self._process_structural_elements(elements, drawing))
+        elif drawing.drawing_type == DrawingType.MEP:
+            items.extend(self._process_mep_elements(elements, drawing))
+        
+        return items
+
+    def _process_architectural_elements(self, elements: List[Dict], drawing: Drawing) -> List[BOQItem]:
+        """Process architectural elements and generate BOQ items"""
+        items = []
+        
+        for element in elements:
+            element_type = element.get('type', 'unknown')
+            
+            if element_type == 'wall':
+                items.append(self._create_wall_item(element, drawing))
+            elif element_type == 'door':
+                items.append(self._create_door_item(element, drawing))
+            elif element_type == 'window':
+                items.append(self._create_window_item(element, drawing))
+            elif element_type == 'floor':
+                items.append(self._create_floor_item(element, drawing))
+            elif element_type == 'roof':
+                items.append(self._create_roof_item(element, drawing))
+        
+        return [item for item in items if item is not None]
+
+    def _process_structural_elements(self, elements: List[Dict], drawing: Drawing) -> List[BOQItem]:
+        """Process structural elements and generate BOQ items"""
+        items = []
+        
+        for element in elements:
+            element_type = element.get('type', 'unknown')
+            
+            if element_type == 'foundation':
+                items.append(self._create_foundation_item(element, drawing))
+            elif element_type == 'beam':
+                items.append(self._create_beam_item(element, drawing))
+            elif element_type == 'column':
+                items.append(self._create_column_item(element, drawing))
+            elif element_type == 'slab':
+                items.append(self._create_slab_item(element, drawing))
+        
+        return [item for item in items if item is not None]
+
+    def _process_mep_elements(self, elements: List[Dict], drawing: Drawing) -> List[BOQItem]:
+        """Process MEP elements and generate BOQ items"""
+        items = []
+        
+        for element in elements:
+            element_type = element.get('type', 'unknown')
+            
+            if element_type == 'electrical_outlet':
+                items.append(self._create_electrical_outlet_item(element, drawing))
+            elif element_type == 'lighting':
+                items.append(self._create_lighting_item(element, drawing))
+            elif element_type == 'plumbing_fixture':
+                items.append(self._create_plumbing_item(element, drawing))
+            elif element_type == 'hvac_unit':
+                items.append(self._create_hvac_item(element, drawing))
+        
+        return [item for item in items if item is not None]
+
+    def _create_wall_item(self, element: Dict, drawing: Drawing) -> Optional[BOQItem]:
+        """Create BOQ item for wall element"""
+        try:
+            area = element.get('area', 0)
+            if area <= 0:
+                return None
+                
+            return BOQItem(
+                id=str(uuid.uuid4()),
+                project_id=drawing.project_id,
+                item_code=f"A{len(self.processed_drawings):03d}",
+                description=f"Wall construction - {element.get('material', 'standard')}",
+                unit="m²",
+                quantity=round(area, 2),
+                category="masonry",
+                trade="civil",
+                measurement_standard=self.measurement_standard,
+                drawing_reference=drawing.filename
+            )
+        except Exception as e:
+            logger.error(f"Error creating wall item: {e}")
+            return None
+
+    def _create_door_item(self, element: Dict, drawing: Drawing) -> Optional[BOQItem]:
+        """Create BOQ item for door element"""
+        try:
+            return BOQItem(
+                id=str(uuid.uuid4()),
+                project_id=drawing.project_id,
+                item_code=f"B{len(self.processed_drawings):03d}",
+                description=f"Door - {element.get('type', 'standard')} {element.get('width', 800)}mm x {element.get('height', 2100)}mm",
+                unit="Nr",
+                quantity=1,
+                category="joinery",
+                trade="carpentry",
+                measurement_standard=self.measurement_standard,
+                drawing_reference=drawing.filename
+            )
+        except Exception as e:
+            logger.error(f"Error creating door item: {e}")
+            return None
+
+    def _create_window_item(self, element: Dict, drawing: Drawing) -> Optional[BOQItem]:
+        """Create BOQ item for window element"""
+        try:
+            return BOQItem(
+                id=str(uuid.uuid4()),
+                project_id=drawing.project_id,
+                item_code=f"C{len(self.processed_drawings):03d}",
+                description=f"Window - {element.get('type', 'standard')} {element.get('width', 1200)}mm x {element.get('height', 1200)}mm",
+                unit="Nr",
+                quantity=1,
+                category="glazing",
+                trade="glazing",
+                measurement_standard=self.measurement_standard,
+                drawing_reference=drawing.filename
+            )
+        except Exception as e:
+            logger.error(f"Error creating window item: {e}")
+            return None
+
+    def _create_floor_item(self, element: Dict, drawing: Drawing) -> Optional[BOQItem]:
+        """Create BOQ item for floor element"""
+        try:
+            area = element.get('area', 0)
+            if area <= 0:
+                return None
+                
+            return BOQItem(
+                id=str(uuid.uuid4()),
+                project_id=drawing.project_id,
+                item_code=f"D{len(self.processed_drawings):03d}",
+                description=f"Floor finish - {element.get('material', 'standard')}",
+                unit="m²",
+                quantity=round(area, 2),
+                category="flooring",
+                trade="flooring",
+                measurement_standard=self.measurement_standard,
+                drawing_reference=drawing.filename
+            )
+        except Exception as e:
+            logger.error(f"Error creating floor item: {e}")
+            return None
+
+    def _create_roof_item(self, element: Dict, drawing: Drawing) -> Optional[BOQItem]:
+        """Create BOQ item for roof element"""
+        try:
+            area = element.get('area', 0)
+            if area <= 0:
+                return None
+                
+            return BOQItem(
+                id=str(uuid.uuid4()),
+                project_id=drawing.project_id,
+                item_code=f"E{len(self.processed_drawings):03d}",
+                description=f"Roof covering - {element.get('material', 'tiles')}",
+                unit="m²",
+                quantity=round(area, 2),
+                category="roofing",
+                trade="roofing",
+                measurement_standard=self.measurement_standard,
+                drawing_reference=drawing.filename
+            )
+        except Exception as e:
+            logger.error(f"Error creating roof item: {e}")
+            return None
+
+    def _create_foundation_item(self, element: Dict, drawing: Drawing) -> Optional[BOQItem]:
+        """Create BOQ item for foundation element"""
+        try:
+            volume = element.get('volume', 0)
+            if volume <= 0:
+                return None
+                
+            return BOQItem(
+                id=str(uuid.uuid4()),
+                project_id=drawing.project_id,
+                item_code=f"F{len(self.processed_drawings):03d}",
+                description=f"Foundation concrete - {element.get('grade', 'C25/30')}",
+                unit="m³",
+                quantity=round(volume, 2),
+                category="concrete",
+                trade="civil",
+                measurement_standard=self.measurement_standard,
+                drawing_reference=drawing.filename
+            )
+        except Exception as e:
+            logger.error(f"Error creating foundation item: {e}")
+            return None
+
+    def _create_beam_item(self, element: Dict, drawing: Drawing) -> Optional[BOQItem]:
+        """Create BOQ item for beam element"""
+        try:
+            volume = element.get('volume', 0)
+            if volume <= 0:
+                return None
+                
+            return BOQItem(
+                id=str(uuid.uuid4()),
+                project_id=drawing.project_id,
+                item_code=f"G{len(self.processed_drawings):03d}",
+                description=f"Reinforced concrete beam - {element.get('size', 'standard')}",
+                unit="m³",
+                quantity=round(volume, 2),
+                category="concrete",
+                trade="civil",
+                measurement_standard=self.measurement_standard,
+                drawing_reference=drawing.filename
+            )
+        except Exception as e:
+            logger.error(f"Error creating beam item: {e}")
+            return None
+
+    def _create_column_item(self, element: Dict, drawing: Drawing) -> Optional[BOQItem]:
+        """Create BOQ item for column element"""
+        try:
+            volume = element.get('volume', 0)
+            if volume <= 0:
+                return None
+                
+            return BOQItem(
+                id=str(uuid.uuid4()),
+                project_id=drawing.project_id,
+                item_code=f"H{len(self.processed_drawings):03d}",
+                description=f"Reinforced concrete column - {element.get('size', 'standard')}",
+                unit="m³",
+                quantity=round(volume, 2),
+                category="concrete",
+                trade="civil",
+                measurement_standard=self.measurement_standard,
+                drawing_reference=drawing.filename
+            )
+        except Exception as e:
+            logger.error(f"Error creating column item: {e}")
+            return None
+
+    def _create_slab_item(self, element: Dict, drawing: Drawing) -> Optional[BOQItem]:
+        """Create BOQ item for slab element"""
+        try:
+            volume = element.get('volume', 0)
+            if volume <= 0:
+                return None
+                
+            return BOQItem(
+                id=str(uuid.uuid4()),
+                project_id=drawing.project_id,
+                item_code=f"I{len(self.processed_drawings):03d}",
+                description=f"Reinforced concrete slab - {element.get('thickness', '150')}mm thick",
+                unit="m³",
+                quantity=round(volume, 2),
+                category="concrete",
+                trade="civil",
+                measurement_standard=self.measurement_standard,
+                drawing_reference=drawing.filename
+            )
+        except Exception as e:
+            logger.error(f"Error creating slab item: {e}")
+            return None
+
+    def _create_electrical_outlet_item(self, element: Dict, drawing: Drawing) -> Optional[BOQItem]:
+        """Create BOQ item for electrical outlet"""
+        try:
+            return BOQItem(
+                id=str(uuid.uuid4()),
+                project_id=drawing.project_id,
+                item_code=f"J{len(self.processed_drawings):03d}",
+                description=f"Electrical outlet - {element.get('type', '13A socket')}",
+                unit="Nr",
+                quantity=1,
+                category="electrical",
+                trade="electrical",
+                measurement_standard=self.measurement_standard,
+                drawing_reference=drawing.filename
+            )
+        except Exception as e:
+            logger.error(f"Error creating electrical outlet item: {e}")
+            return None
+
+    def _create_lighting_item(self, element: Dict, drawing: Drawing) -> Optional[BOQItem]:
+        """Create BOQ item for lighting fixture"""
+        try:
+            return BOQItem(
+                id=str(uuid.uuid4()),
+                project_id=drawing.project_id,
+                item_code=f"K{len(self.processed_drawings):03d}",
+                description=f"Light fitting - {element.get('type', 'LED downlight')}",
+                unit="Nr",
+                quantity=1,
+                category="electrical",
+                trade="electrical",
+                measurement_standard=self.measurement_standard,
+                drawing_reference=drawing.filename
+            )
+        except Exception as e:
+            logger.error(f"Error creating lighting item: {e}")
+            return None
+
+    def _create_plumbing_item(self, element: Dict, drawing: Drawing) -> Optional[BOQItem]:
+        """Create BOQ item for plumbing fixture"""
+        try:
+            return BOQItem(
+                id=str(uuid.uuid4()),
+                project_id=drawing.project_id,
+                item_code=f"L{len(self.processed_drawings):03d}",
+                description=f"Plumbing fixture - {element.get('type', 'standard')}",
+                unit="Nr",
+                quantity=1,
+                category="plumbing",
+                trade="plumbing",
+                measurement_standard=self.measurement_standard,
+                drawing_reference=drawing.filename
+            )
+        except Exception as e:
+            logger.error(f"Error creating plumbing item: {e}")
+            return None
+
+    def _create_hvac_item(self, element: Dict, drawing: Drawing) -> Optional[BOQItem]:
+        """Create BOQ item for HVAC unit"""
+        try:
+            return BOQItem(
+                id=str(uuid.uuid4()),
+                project_id=drawing.project_id,
+                item_code=f"M{len(self.processed_drawings):03d}",
+                description=f"HVAC unit - {element.get('type', 'standard')}",
+                unit="Nr",
+                quantity=1,
+                category="mechanical",
+                trade="mechanical",
+                measurement_standard=self.measurement_standard,
+                drawing_reference=drawing.filename
+            )
+        except Exception as e:
+            logger.error(f"Error creating HVAC item: {e}")
+            return None
+```
+
+FILE 2: excel_generator.py
+==========================
+
+```python
+from openpyxl import Workbook
+from openpyxl.styles import Font, Alignment, Border, Side, PatternFill, Protection
+from openpyxl.worksheet.protection import SheetProtection
+from typing import List, Dict, Any, Optional
+import io
+from ..models import BOQItem, Project
+from reportlab.lib.pagesizes import letter, A4
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib import colors
+from reportlab.lib.units import inch
+from datetime import datetime
+
+class ExcelGenerator:
+    def __init__(self):
+        # Black and white fonts only - no colors
+        self.header_font = Font(bold=True, size=12)
+        self.section_font = Font(bold=True, size=14)
+        self.title_font = Font(bold=True, size=18)
+        self.data_font = Font(size=10)
+        self.preamble_font = Font(size=10)
+        
+        # Vertical borders only within sections - no horizontal lines
+        self.vertical_border = Border(
+            left=Side(style='thin'),
+            right=Side(style='thin')
+        )
+        
+        # Full border for headers and totals only
+        self.full_border = Border(
+            left=Side(style='thin'),
+            right=Side(style='thin'),
+            top=Side(style='thin'),
+            bottom=Side(style='thin')
+        )
+        
+        # No colors - black and white documents only
+        self.header_fill = None
+        self.section_fill = None
+        self.rate_fill = None
+        self.total_fill = None
+        self.warning_fill = None
+
+    def _get_measurement_standard_preambles(self, standard: str) -> Dict[str, Any]:
+        """Get preambles for specific measurement standard"""
+        
+        smm7_preambles = {
+            "general": [
+                "All works shall be executed in accordance with the current edition of SMM7, relevant British Standards, Codes of Practice, and statutory requirements.",
+                "All materials shall be new, of merchantable quality, and approved by the Architect/Contract Administrator."
+            ],
+            "measurement_rules": [
+                "Quantities are measured net in accordance with SMM7 rules unless otherwise stated.",
+                "Rates are deemed to include for supply and delivery of materials, labour, plant, tools, and equipment.",
+                "No separate measurement for waste, cutting, and fitting unless specifically stated.",
+                "Temporary works are deemed included in the rates unless otherwise specified."
+            ],
+            "specific": {
+                "concrete_work": "Concrete work measured in cubic metres, formwork measured separately in square metres.",
+                "masonry_work": "Masonry measured in square metres, mortar joints included in the rate.",
+                "plastering_work": "Plastering measured in square metres to surfaces, including preparation.",
+                "painting_work": "Painting measured in square metres to surfaces, including preparation and primer.",
+                "roofing_work": "Roofing measured in square metres on slope, including underlays and fixings."
+            },
+            "provisional_and_pc_sums": [
+                "Prime Cost Sums are for materials only, labour for fixing to be added.",
+                "Provisional Sums include both materials and labour as stated.",
+                "Contractor's profit and attendance on PC Sums to be included in preliminaries."
+            ]
+        }
+        
+        rics_nrm_preambles = {
+            "general": [
+                "All works shall be executed in accordance with RICS New Rules of Measurement (NRM), relevant British Standards, and statutory requirements.",
+                "All materials shall be new, of merchantable quality, and approved by the Contract Administrator."
+            ],
+            "measurement_rules": [
+                "Quantities measured in accordance with NRM2 rules for detailed measurement.",
+                "Rates include all costs of materials, labour, plant, and overheads.",
+                "Risk allowances and design development costs included where stated.",
+                "Inflation and market conditions allowances as specified in tender documents."
+            ],
+            "specific": {
+                "facilitating_works": "Site preparation, temporary works, and enabling works measured separately.",
+                "substructure": "Foundations, basement works, and ground floor construction.",
+                "superstructure": "Frame, upper floors, roof, stairs, external walls, windows and doors.",
+                "internal_finishes": "Wall, floor and ceiling finishes, internal doors and ironmongery.",
+                "services": "Mechanical, electrical, transportation, and protection installations."
+            },
+            "provisional_and_pc_sums": [
+                "Prime Cost Sums exclude contractor's profit and preliminaries.",
+                "Provisional Sums are fully inclusive of all costs.",
+                "Design and risk allowances included in base cost estimate."
+            ]
+        }
+        
+        cesmm_preambles = {
+            "general": [
+                "All works shall be executed in accordance with CESMM4, relevant British Standards, and contract specifications.",
+                "All materials shall comply with specified standards and be approved by the Engineer."
+            ],
+            "measurement_rules": [
+                "Quantities measured in accordance with CESMM4 classification and rules.",
+                "Rates deemed to include all costs, risks, and method-related charges.",
+                "Temporary works and construction methods at contractor's discretion unless specified.",
+                "Method-related charges measured separately where applicable."
+            ],
+            "specific": {
+                "earthworks": "Excavation, filling, and landscaping measured by volume and area.",
+                "concrete_work": "In-situ and precast concrete measured by volume, formwork by area.",
+                "roadworks": "Pavements, kerbs, and road furniture measured by area and length.",
+                "drainage": "Pipes, manholes, and ancillary works measured by length and number.",
+                "structures": "Bridges, retaining walls, and major structures measured by appropriate units."
+            },
+            "provisional_and_pc_sums": [
+                "Prime Cost items exclude profit and preliminaries unless stated.",
+                "Provisional Sums are inclusive estimates for undefined work.",
+                "Daywork rates apply to varied work as specified in contract."
+            ]
+        }
+        
+        preambles_map = {
+            "SMM7": smm7_preambles,
+            "RICS_NRM": rics_nrm_preambles,
+            "CESMM": cesmm_preambles
+        }
+        
+        return preambles_map.get(standard, smm7_preambles)
+
+    def generate_boq_excel(self, project: Project, boq_items: List[BOQItem]) -> bytes:
+        """Generate Excel BOQ with professional formatting and measurement standard compliance"""
+        wb = Workbook()
+        
+        # Remove default sheet and create new one
+        wb.remove(wb.active)
+        ws = wb.create_sheet(title="Bill of Quantities")
+        
+        # Get measurement standard preambles
+        preambles = self._get_measurement_standard_preambles(project.measurement_standard.value)
+        
+        current_row = 1
+        
+        # Project header
+        ws[f'A{current_row}'] = "BILL OF QUANTITIES"
+        ws[f'A{current_row}'].font = self.title_font
+        ws[f'A{current_row}'].alignment = Alignment(horizontal='center', vertical='center')
+        ws.merge_cells(f'A{current_row}:I{current_row}')
+        current_row += 1
+        
+        ws[f'A{current_row}'] = f"Project: {project.name}"
+        ws[f'A{current_row}'].font = Font(bold=True, size=14)
+        current_row += 1
+        
+        ws[f'A{current_row}'] = f"Measurement Standard: {project.measurement_standard.value.upper()}"
+        ws[f'A{current_row}'].font = Font(bold=True, size=12)
+        current_row += 2
+        
+        # Add preambles section
+        ws[f'A{current_row}'] = "PREAMBLES AND GENERAL CONDITIONS"
+        ws[f'A{current_row}'].font = self.section_font
+        ws[f'A{current_row}'].alignment = Alignment(horizontal='center', vertical='center')
+        ws.merge_cells(f'A{current_row}:I{current_row}')
+        current_row += 1
+        
+        # General preambles
+        for preamble in preambles.get('general', []):
+            ws[f'A{current_row}'] = f"• {preamble}"
+            ws[f'A{current_row}'].font = self.preamble_font
+            ws[f'A{current_row}'].alignment = Alignment(wrap_text=True)
+            current_row += 1
+        
+        current_row += 1
+        
+        # Measurement rules
+        ws[f'A{current_row}'] = "MEASUREMENT RULES"
+        ws[f'A{current_row}'].font = self.section_font
+        ws[f'A{current_row}'].alignment = Alignment(horizontal='center', vertical='center')
+        ws.merge_cells(f'A{current_row}:I{current_row}')
+        current_row += 1
+        
+        for rule in preambles.get('measurement_rules', []):
+            ws[f'A{current_row}'] = f"• {rule}"
+            ws[f'A{current_row}'].font = self.preamble_font
+            ws[f'A{current_row}'].alignment = Alignment(wrap_text=True)
+            current_row += 1
+        
+        current_row += 2
+        
+        # Add specific measurement rules if available
+        if preambles.get('specific'):
+            ws[f'A{current_row}'] = "SPECIFIC MEASUREMENT RULES"
+            ws[f'A{current_row}'].font = self.section_font
+            ws[f'A{current_row}'].alignment = Alignment(horizontal='center', vertical='center')
+            ws.merge_cells(f'A{current_row}:I{current_row}')
+            current_row += 1
+            
+            for work_type, rule in preambles['specific'].items():
+                ws[f'A{current_row}'] = f"{work_type.replace('_', ' ').title()}: {rule}"
+                ws[f'A{current_row}'].font = self.preamble_font
+                ws[f'A{current_row}'].alignment = Alignment(wrap_text=True)
+                current_row += 1
+        
+        # Add PC sums and provisional sums section
+        if preambles.get('provisional_and_pc_sums'):
+            current_row += 1
+            ws[f'A{current_row}'] = "PROVISIONAL AND PRIME COST SUMS"
+            ws[f'A{current_row}'].font = self.section_font
+            ws[f'A{current_row}'].alignment = Alignment(horizontal='center', vertical='center')
+            ws.merge_cells(f'A{current_row}:I{current_row}')
+            current_row += 1
+            
+            for pc_rule in preambles['provisional_and_pc_sums']:
+                ws[f'A{current_row}'] = f"• {pc_rule}"
+                ws[f'A{current_row}'].font = self.preamble_font
+                ws[f'A{current_row}'].alignment = Alignment(wrap_text=True)
+                current_row += 1
+        
+        current_row += 2
+        
+        # Drawing register
+        if hasattr(project, 'drawings') and project.drawings:
+            ws[f'A{current_row}'] = "DRAWING REGISTER"
+            ws[f'A{current_row}'].font = self.section_font
+            ws[f'A{current_row}'].alignment = Alignment(horizontal='center', vertical='center')
+            ws.merge_cells(f'A{current_row}:I{current_row}')
+            current_row += 1
+            
+            # Drawing register headers
+            drawing_headers = ["Drawing Number", "Drawing Title", "Revision", "Date", "Status"]
+            for col, header in enumerate(drawing_headers, 1):
+                cell = ws.cell(row=current_row, column=col, value=header)
+                cell.font = self.header_font
+                cell.border = self.full_border
+                cell.alignment = Alignment(horizontal='center', vertical='center')
+            
+            current_row += 1
+            
+            # Drawing register data
+            for drawing in project.drawings:
+                ws.cell(row=current_row, column=1, value=getattr(drawing, 'drawing_number', 'N/A'))
+                ws.cell(row=current_row, column=2, value=getattr(drawing, 'drawing_title', drawing.filename))
+                ws.cell(row=current_row, column=3, value=getattr(drawing, 'revision_number', 'A'))
+                ws.cell(row=current_row, column=4, value=getattr(drawing, 'revision_date', 'N/A'))
+                ws.cell(row=current_row, column=5, value="Current")
+                
+                # Apply vertical borders only to drawing register data
+                for col in range(1, 6):
+                    ws.cell(row=current_row, column=col).border = self.vertical_border
+                
+                current_row += 1
+            
+            current_row += 2
+        
+        # BOQ items table
+        headers = [
+            "Item No.", "Item Code", "Description", "Unit", 
+            "Quantity", "Rate", "Amount", "Category", "Trade"
+        ]
+        
+        header_row = current_row
+        for col, header in enumerate(headers, 1):
+            cell = ws.cell(row=header_row, column=col, value=header)
+            cell.font = self.header_font
+            cell.border = self.full_border
+            cell.alignment = Alignment(horizontal='center', vertical='center')
+            cell.protection = Protection(locked=True)
+        
+        current_row = header_row + 1
+        
+        # Group items by category for section organization
+        items_by_category = {}
+        for item in boq_items:
+            if item.category not in items_by_category:
+                items_by_category[item.category] = []
+            items_by_category[item.category].append(item)
+        
+        item_idx = 1
+        total_amount_formula_cells = []
+        
+        # Process each category as a section
+        for category, items in items_by_category.items():
+            # Category section header
+            ws.cell(row=current_row, column=1, value=f"{category.upper()} WORKS")
+            ws.cell(row=current_row, column=1).font = Font(bold=True, size=12)
+            ws.merge_cells(f'A{current_row}:I{current_row}')
+            
+            # Apply full border to section header
+            for col in range(1, 10):
+                ws.cell(row=current_row, column=col).border = self.full_border
+            
+            current_row += 1
+            
+            # Items in this category
+            for item in items:
+                ws.cell(row=current_row, column=1, value=item_idx)
+                ws.cell(row=current_row, column=2, value=item.item_code)
+                ws.cell(row=current_row, column=3, value=item.description)
+                ws.cell(row=current_row, column=4, value=item.unit)
+                
+                quantity_cell = ws.cell(row=current_row, column=5, value=item.quantity)
+                quantity_cell.number_format = '0.00'
+                quantity_cell.protection = Protection(locked=True)
+                
+                rate_cell = ws.cell(row=current_row, column=6, value=0.00)
+                rate_cell.number_format = '0.00'
+                rate_cell.protection = Protection(locked=False)  # Editable
+                
+                amount_cell = ws.cell(row=current_row, column=7)
+                amount_cell.value = f"=E{current_row}*F{current_row}"
+                amount_cell.number_format = '0.00'
+                amount_cell.protection = Protection(locked=True)
+                total_amount_formula_cells.append(f"G{current_row}")
+                
+                ws.cell(row=current_row, column=8, value=item.category)
+                ws.cell(row=current_row, column=9, value=item.trade)
+                
+                # Apply vertical borders only to data rows (no horizontal lines within sections)
+                for col in range(1, 10):
+                    ws.cell(row=current_row, column=col).border = self.vertical_border
+                    ws.cell(row=current_row, column=col).font = self.data_font
+                    ws.cell(row=current_row, column=col).alignment = Alignment(horizontal='center', vertical='center')
+                
+                current_row += 1
+                item_idx += 1
+            
+            current_row += 1  # Space between categories
+        
+        # Total row
+        total_row = current_row
+        ws.cell(row=total_row, column=6, value="TOTAL:")
+        ws.cell(row=total_row, column=6).font = Font(bold=True, size=12)
+        ws.cell(row=total_row, column=6).alignment = Alignment(horizontal='right')
+        
+        total_cell = ws.cell(row=total_row, column=7)
+        if total_amount_formula_cells:
+            total_cell.value = f"=SUM({','.join(total_amount_formula_cells)})"
+        else:
+            total_cell.value = 0.00
+        total_cell.font = Font(bold=True, size=12)
+        total_cell.number_format = '0.00'
+        total_cell.alignment = Alignment(horizontal='right')
+        total_cell.border = self.full_border
+        total_cell.protection = Protection(locked=True)
+        
+        # Column widths
+        column_widths = [8, 12, 50, 8, 12, 12, 15, 15, 15]
+        for col, width in enumerate(column_widths, 1):
+            column_letter = chr(64 + col)
+            ws.column_dimensions[column_letter].width = width
+        
+        # Row heights
+        for row in range(1, current_row + 1):
+            cell = ws.cell(row=row, column=1)
+            if cell.fill and cell.fill.start_color.rgb in ["FF366092", "FF4472C4"]:
+                ws.row_dimensions[row].height = 25
+            else:
+                ws.row_dimensions[row].height = 18
+        
+        # Instructions for contractors
+        instruction_row = total_row + 3
+        ws.cell(row=instruction_row, column=1, value="INSTRUCTIONS FOR CONTRACTORS:")
+        ws.cell(row=instruction_row, column=1).font = Font(bold=True)
+        
+        instructions = [
+            "1. Only the RATE column can be edited",
+            "2. Enter your rates in the appropriate currency",
+            "3. The AMOUNT column will calculate automatically",
+            "4. Do not modify any other cells - they are protected",
+            "5. Save the file and upload through the bidding portal"
+        ]
+        
+        for i, instruction in enumerate(instructions):
+            ws.cell(row=instruction_row + i + 1, column=1, value=instruction)
+            ws.cell(row=instruction_row + i + 1, column=1).font = Font(size=10)
+        
+        # Sheet protection
+        ws.protection.sheet = True
+        ws.protection.password = "boq2024"
+        ws.protection.formatCells = False
+        ws.protection.formatColumns = False
+        ws.protection.formatRows = False
+        ws.protection.insertColumns = False
+        ws.protection.insertRows = False
+        ws.protection.deleteColumns = False
+        ws.protection.deleteRows = False
+        
+        # Save to bytes
+        excel_buffer = io.BytesIO()
+        wb.save(excel_buffer)
+        excel_buffer.seek(0)
+        return excel_buffer.getvalue()
+
+    def generate_bid_comparison_excel(self, project: Project, bids_data: List[Dict[str, Any]]) -> bytes:
+        """Generate Excel comparison of all bids for client review"""
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Bid Comparison"
+        
+        ws['A1'] = f"Project: {project.name}"
+        ws['A1'].font = Font(bold=True, size=14)
+        ws['A2'] = f"Bid Comparison Report"
+        ws['A2'].font = Font(bold=True, size=12)
+        
+        headers = ["Rank", "Contractor", "Company", "Total Amount", "Status", "Submitted Date"]
+        header_row = 4
+        
+        for col, header in enumerate(headers, 1):
+            cell = ws.cell(row=header_row, column=col, value=header)
+            cell.font = self.header_font
+            cell.border = self.full_border
+            cell.alignment = Alignment(horizontal='center')
+        
+        current_row = header_row + 1
+        for bid in bids_data:
+            ws.cell(row=current_row, column=1, value=bid.get('rank', 'N/A'))
+            ws.cell(row=current_row, column=2, value=bid.get('contractor_name', ''))
+            ws.cell(row=current_row, column=3, value=bid.get('contractor_company', ''))
+            
+            amount_cell = ws.cell(row=current_row, column=4, value=bid.get('total_amount', 0))
+            amount_cell.number_format = '0.00'
+            
+            ws.cell(row=current_row, column=5, value=bid.get('status', ''))
+            ws.cell(row=current_row, column=6, value=bid.get('submitted_at', ''))
+            
+            # Highlight winning bid with bold text instead of color
+            if bid.get('rank') == 1:
+                for col in range(1, 7):
+                    ws.cell(row=current_row, column=col).font = Font(bold=True)
+            
+            current_row += 1
+        
+        # Column widths
+        column_widths = [8, 20, 25, 15, 12, 15]
+        for col, width in enumerate(column_widths, 1):
+            ws.column_dimensions[ws.cell(row=1, column=col).column_letter].width = width
+        
+        excel_buffer = io.BytesIO()
+        wb.save(excel_buffer)
+        excel_buffer.seek(0)
+        return excel_buffer.getvalue()
+```
+
+ANALYSIS SUMMARY
+================
+
+DUPLICATE ITEMS ISSUE:
+- The problem is in boq_generator.py around lines 52-98
+- The building type processing loop may be causing the same drawing to be processed multiple times
+- Added processed_drawings set to track and prevent duplicate processing
+- Each drawing should only be processed once per BOQ generation
+
+FORMATTING ISSUES:
+- excel_generator.py was applying colors (removed all PatternFill colors)
+- Horizontal lines were being applied within sections (changed to vertical_border only for data rows)
+- Full borders now only applied to headers and totals
+- Instructions updated to remove reference to "highlighted in yellow" since no colors used
+
+FIXES APPLIED:
+1. Added processed_drawings set in BOQGenerator to prevent duplicate processing
+2. Removed all color fills from Excel formatting
+3. Changed borders to vertical-only within sections
+4. Updated fonts to remove color specifications
+5. Made BOQ documents black and white only
+
+Please analyze this code with ChatGPT to identify the root cause of the duplicate items issue.

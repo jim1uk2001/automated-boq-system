@@ -14,14 +14,102 @@ from datetime import datetime
 class ExcelGenerator:
     def __init__(self):
         self.header_font = Font(bold=True, size=12)
+        self.section_font = Font(bold=True, size=14)
+        self.title_font = Font(bold=True, size=18)
         self.data_font = Font(size=10)
-        self.border = Border(
+        self.preamble_font = Font(size=10)
+        
+        self.vertical_border = Border(
+            left=Side(style='thin'),
+            right=Side(style='thin')
+        )
+        
+        self.full_border = Border(
             left=Side(style='thin'),
             right=Side(style='thin'),
             top=Side(style='thin'),
             bottom=Side(style='thin')
         )
-        self.header_fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+        
+        self.header_fill = None
+        self.section_fill = None
+        self.rate_fill = None
+        self.total_fill = None
+        self.warning_fill = None
+
+    def _get_measurement_standard_preambles(self, standard: str) -> Dict[str, Any]:
+        """Get preambles for specific measurement standard"""
+        
+        smm7_preambles = {
+            "general": [
+                "All works shall be executed in accordance with the current edition of SMM7, relevant British Standards, Codes of Practice, and statutory requirements.",
+                "All materials shall be new, of merchantable quality, and approved by the Architect/Contract Administrator."
+            ],
+            "measurement_rules": [
+                "Quantities are measured net in accordance with SMM7 rules unless otherwise stated.",
+                "Rates are deemed to include for supply and delivery of materials, labour, plant, tools, and equipment.",
+                "Rates shall include for waste, laps, overlaps, cutting, jointing, notching, and normal fixings.",
+                "No allowance shall be made for working in confined spaces, at heights, or in difficult conditions unless specifically described.",
+                "All ancillary sundries, fittings, and supports necessary for proper execution are deemed included unless stated otherwise."
+            ],
+            "specific": {
+                "plastering": "Rates include angles, arises, reveals, soffits, and openings under 0.5m².",
+                "painting": "Rates include preparation, priming, knotting, stopping, rubbing down, cutting in, and scaffolding up to 3.6m height.",
+                "brickwork_blockwork": "Rates include bonding, toothing, cutting, forming openings up to 0.5m², and all jointing unless otherwise described.",
+                "concrete": "Rates include compacting, curing, finishing, formwork to sides up to 0.5m², and sundry supports unless otherwise measured.",
+                "timber": "Rates include nails, screws, bolts, cutting, notching, drilling, and fitting of normal connectors."
+            },
+            "provisional_and_pc_sums": [
+                "Prime Cost (PC) Sums are for supply of materials/goods only. Contractor's rates shall include for fixing, labour, and attendance.",
+                "Provisional Sums are allowances for work not sufficiently defined; they are to be expended as directed by the Architect/Contract Administrator."
+            ]
+        }
+        
+        nrm2_preambles = {
+            "general": [
+                "All works shall comply with the latest British Standards, Codes of Practice, statutory requirements, and good building practice.",
+                "All materials shall be new, of best quality of their kind, and approved by the Contract Administrator."
+            ],
+            "measurement_rules": [
+                "Quantities measured net in accordance with RICS NRM2 unless otherwise stated.",
+                "Rates shall include supply and delivery of materials, labour, plant, tools, equipment, waste, laps, overlaps, fixings, and ancillary items.",
+                "Items measured in m² or m³ include all work in place unless otherwise described.",
+                "Works at any level, height, or position are deemed included.",
+                "All cutting, fitting, notching, splaying, jointing, and making good are deemed included."
+            ],
+            "specific": {
+                "plastering": "Includes angles, arises, reveals, and openings <300mm wide.",
+                "painting": "Includes cutting in, preparation, and all surfaces unless otherwise described.",
+                "brickwork_blockwork": "Rates include bonding, quoins, reveals, jambs, sills, jointing, pointing, and cutting.",
+                "concrete": "Rates include formwork, compacting, curing, finishing unless separately measured.",
+                "timber": "Rates include nails, screws, plates, fixings."
+            },
+            "provisional_and_pc_sums": [
+                "Prime Cost (PC) Sums cover supply-only of nominated items; contractor's rates include attendances, fixings, associated works.",
+                "Provisional Sums must be identified as either Defined (scope broadly known) or Undefined (scope unknown)."
+            ]
+        }
+        
+        cesmm_preambles = {
+            "general": [
+                "All works shall be executed in accordance with CESMM4, relevant British Standards, and statutory requirements.",
+                "All materials shall be new, of specified quality, and approved by the Engineer."
+            ],
+            "measurement_rules": [
+                "Quantities measured net in accordance with CESMM4 unless otherwise stated.",
+                "Rates deemed to include for all labour, materials, plant, and incidental costs.",
+                "Method-related charges shall be included where applicable.",
+                "All temporary works and construction aids are deemed included unless separately measured."
+            ]
+        }
+        
+        preambles_map = {
+            "SMM7": smm7_preambles,
+            "RICS_NRM": nrm2_preambles,
+            "CESMM": cesmm_preambles
+        }
+        
+        return preambles_map.get(standard, smm7_preambles)
 
     def generate_boq_excel(self, project: Project, boq_items: List[BOQItem]) -> bytes:
         """Generate Excel BOQ with protected cells, formulas, and drawing revision tracking"""
@@ -31,18 +119,15 @@ class ExcelGenerator:
         drawing_ws.title = "Drawing Register"
         
         drawing_ws['A1'] = f"PROJECT: {project.name}"
-        drawing_ws['A1'].font = Font(bold=True, size=16, color="FFFFFF")
-        drawing_ws['A1'].fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+        drawing_ws['A1'].font = Font(bold=True, size=16)
         drawing_ws.merge_cells('A1:G1')
         
         drawing_ws['A2'] = f"MEASUREMENT STANDARD: {project.measurement_standard.value.upper()}"
-        drawing_ws['A2'].font = Font(bold=True, size=12, color="FFFFFF")
-        drawing_ws['A2'].fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+        drawing_ws['A2'].font = Font(bold=True, size=12)
         drawing_ws.merge_cells('A2:G2')
         
         drawing_ws['A3'] = "DRAWING REGISTER - FOR VERSION CONTROL"
-        drawing_ws['A3'].font = Font(bold=True, size=14, color="FF0000")
-        drawing_ws['A3'].fill = PatternFill(start_color="FFCCCC", end_color="FFCCCC", fill_type="solid")
+        drawing_ws['A3'].font = Font(bold=True, size=14)
         drawing_ws.merge_cells('A3:G3')
         
         drawing_headers = [
@@ -54,9 +139,7 @@ class ExcelGenerator:
         for col, header in enumerate(drawing_headers, 1):
             cell = drawing_ws.cell(row=header_row, column=col, value=header)
             cell.font = Font(bold=True, size=12)
-            cell.fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
-            cell.font = Font(bold=True, size=12, color="FFFFFF")
-            cell.border = self.border
+            cell.border = self.full_border
             cell.alignment = Alignment(horizontal='center', vertical='center')
         
         current_row = header_row + 1
@@ -70,7 +153,7 @@ class ExcelGenerator:
             drawing_ws.cell(row=current_row, column=7, value=drawing.uploaded_at.strftime("%Y-%m-%d"))
             
             for col in range(1, 8):
-                drawing_ws.cell(row=current_row, column=col).border = self.border
+                drawing_ws.cell(row=current_row, column=col).border = self.vertical_border
             
             current_row += 1
         
@@ -103,141 +186,246 @@ class ExcelGenerator:
         
         ws = wb.create_sheet(title="Bill of Quantities")
         
+        preambles = self._get_measurement_standard_preambles(project.measurement_standard.value)
+        
+        current_row = 1
+        
+        ws[f'A{current_row}'] = "BILL OF QUANTITIES"
+        ws[f'A{current_row}'].font = self.title_font
+        ws[f'A{current_row}'].alignment = Alignment(horizontal='center', vertical='center')
+        ws.merge_cells(f'A{current_row}:I{current_row}')
+        current_row += 1
+        
+        ws[f'A{current_row}'] = f"Project: {project.name}"
+        ws[f'A{current_row}'].font = Font(bold=True, size=14)
+        current_row += 1
+        
+        project_info_from_drawings = self._extract_project_info_from_drawings(project.drawings)
+        if project_info_from_drawings:
+            if project_info_from_drawings.get('project_number'):
+                ws[f'A{current_row}'] = f"Project Number: {project_info_from_drawings.get('project_number')}"
+                ws[f'A{current_row}'].font = Font(bold=True, size=12)
+                current_row += 1
+            if project_info_from_drawings.get('client_name'):
+                ws[f'A{current_row}'] = f"Client: {project_info_from_drawings.get('client_name')}"
+                ws[f'A{current_row}'].font = Font(bold=True, size=12)
+                current_row += 1
+        
+        ws[f'A{current_row}'] = f"Measurement Standard: {project.measurement_standard.value.upper()}"
+        ws[f'A{current_row}'].font = Font(bold=True, size=12)
+        current_row += 1
+        
+        ws[f'A{current_row}'] = f"Generated: {datetime.now().strftime('%d/%m/%Y %H:%M')}"
+        ws[f'A{current_row}'].font = Font(size=10)
+        current_row += 2
+        
+        ws[f'A{current_row}'] = "PREAMBLES AND GENERAL CONDITIONS"
+        ws[f'A{current_row}'].font = self.section_font
+        ws[f'A{current_row}'].alignment = Alignment(horizontal='center', vertical='center')
+        ws.merge_cells(f'A{current_row}:I{current_row}')
+        current_row += 1
+        
+        for preamble in preambles.get('general', []):
+            ws[f'A{current_row}'] = f"• {preamble}"
+            ws[f'A{current_row}'].font = self.preamble_font
+            ws[f'A{current_row}'].alignment = Alignment(wrap_text=True)
+            ws.merge_cells(f'A{current_row}:I{current_row}')
+            current_row += 1
+        
+        current_row += 1
+        
+        ws[f'A{current_row}'] = "MEASUREMENT RULES"
+        ws[f'A{current_row}'].font = self.section_font
+        ws[f'A{current_row}'].alignment = Alignment(horizontal='center', vertical='center')
+        ws.merge_cells(f'A{current_row}:I{current_row}')
+        current_row += 1
+        
+        for rule in preambles.get('measurement_rules', []):
+            ws[f'A{current_row}'] = f"• {rule}"
+            ws[f'A{current_row}'].font = self.preamble_font
+            ws[f'A{current_row}'].alignment = Alignment(wrap_text=True)
+            ws.merge_cells(f'A{current_row}:I{current_row}')
+            current_row += 1
+        
+        current_row += 1
+        
+        if preambles.get('specific'):
+            ws[f'A{current_row}'] = "SPECIFIC MEASUREMENT RULES"
+            ws[f'A{current_row}'].font = self.section_font
+            ws[f'A{current_row}'].alignment = Alignment(horizontal='center', vertical='center')
+            ws.merge_cells(f'A{current_row}:I{current_row}')
+            current_row += 1
+            
+            for work_type, rule in preambles['specific'].items():
+                ws[f'A{current_row}'] = f"{work_type.replace('_', ' ').title()}: {rule}"
+                ws[f'A{current_row}'].font = self.preamble_font
+                ws[f'A{current_row}'].alignment = Alignment(wrap_text=True)
+                ws.merge_cells(f'A{current_row}:I{current_row}')
+                current_row += 1
+            
+            current_row += 1
+        
+        if preambles.get('provisional_and_pc_sums'):
+            ws[f'A{current_row}'] = "PROVISIONAL AND PRIME COST SUMS"
+            ws[f'A{current_row}'].font = self.section_font
+            ws[f'A{current_row}'].alignment = Alignment(horizontal='center', vertical='center')
+            ws.merge_cells(f'A{current_row}:I{current_row}')
+            current_row += 1
+            
+            for pc_rule in preambles['provisional_and_pc_sums']:
+                ws[f'A{current_row}'] = f"• {pc_rule}"
+                ws[f'A{current_row}'].font = self.preamble_font
+                ws[f'A{current_row}'].alignment = Alignment(wrap_text=True)
+                ws.merge_cells(f'A{current_row}:I{current_row}')
+                current_row += 1
+            
+            current_row += 2
+        
         headers = [
             "Item No.", "Item Code", "Description", "Unit", 
             "Quantity", "Rate", "Amount", "Category", "Trade"
         ]
         
-        ws['A1'] = f"Project: {project.name}"
-        ws['A1'].font = Font(bold=True, size=14)
-        
-        project_info_from_drawings = self._extract_project_info_from_drawings(project.drawings)
-        header_row_offset = 0
-        if project_info_from_drawings:
-            if project_info_from_drawings.get('project_number'):
-                ws['A2'] = f"Project Number: {project_info_from_drawings.get('project_number')}"
-                ws['A2'].font = Font(bold=True, size=12)
-                header_row_offset += 1
-            if project_info_from_drawings.get('client_name'):
-                ws[f'A{2 + header_row_offset}'] = f"Client: {project_info_from_drawings.get('client_name')}"
-                ws[f'A{2 + header_row_offset}'].font = Font(bold=True, size=12)
-                header_row_offset += 1
-        
-        ws[f'A{2 + header_row_offset}'] = f"Measurement Standard: {project.measurement_standard.value.upper()}"
-        ws[f'A{2 + header_row_offset}'].font = Font(bold=True, size=12)
-        ws[f'A{4 + header_row_offset}'] = "BILL OF QUANTITIES"
-        ws[f'A{4 + header_row_offset}'].font = Font(bold=True, size=16)
-        
-        header_row = 6 + header_row_offset
+        header_row = current_row
         for col, header in enumerate(headers, 1):
             cell = ws.cell(row=header_row, column=col, value=header)
             cell.font = self.header_font
-            cell.fill = self.header_fill
-            cell.border = self.border
+            cell.border = self.full_border
             cell.alignment = Alignment(horizontal='center', vertical='center')
             cell.protection = Protection(locked=True)
         
         current_row = header_row + 1
         total_amount_formula_cells = []
         
-        item_idx = 1
+        items_by_category = {}
         for item in boq_items:
-            if item.item_code == "SECTION":
-                cell = ws.cell(row=current_row, column=1)
-                cell.value = item.description
-                cell.font = Font(bold=True, size=12)
-                ws.merge_cells(start_row=current_row, start_column=1, end_row=current_row, end_column=9)
-                for col in range(1, 10):
-                    cell = ws.cell(row=current_row, column=col)
-                    cell.fill = PatternFill(start_color="AAAAAA", end_color="AAAAAA", fill_type="solid")
-                    cell.alignment = Alignment(horizontal='center')
-                current_row += 1
-                continue
-            
-            cell = ws.cell(row=current_row, column=1, value=item_idx)
-            cell.font = self.data_font
-            cell.border = self.border
-            cell.protection = Protection(locked=True)
-            
-            cell = ws.cell(row=current_row, column=2, value=item.item_code)
-            cell.font = self.data_font
-            cell.border = self.border
-            cell.protection = Protection(locked=True)
-            
-            cell = ws.cell(row=current_row, column=3, value=item.description)
-            cell.font = self.data_font
-            cell.border = self.border
-            cell.protection = Protection(locked=True)
-            
-            cell = ws.cell(row=current_row, column=4, value=item.unit)
-            cell.font = self.data_font
-            cell.border = self.border
-            cell.alignment = Alignment(horizontal='center')
-            cell.protection = Protection(locked=True)
-            
-            cell = ws.cell(row=current_row, column=5, value=item.quantity)
-            cell.font = self.data_font
-            cell.border = self.border
-            cell.number_format = '0.00'
-            cell.alignment = Alignment(horizontal='right')
-            cell.protection = Protection(locked=True)
-            
-            cell = ws.cell(row=current_row, column=6, value=0.00)
-            cell.font = self.data_font
-            cell.border = self.border
-            cell.number_format = '0.00'
-            cell.alignment = Alignment(horizontal='right')
-            cell.protection = Protection(locked=False)  # UNLOCKED
-            cell.fill = PatternFill(start_color="FFFF99", end_color="FFFF99", fill_type="solid")  # Yellow highlight
-            
-            amount_cell = ws.cell(row=current_row, column=7)
-            amount_cell.value = f"=E{current_row}*F{current_row}"
-            amount_cell.font = self.data_font
-            amount_cell.border = self.border
-            amount_cell.number_format = '0.00'
-            amount_cell.alignment = Alignment(horizontal='right')
-            amount_cell.protection = Protection(locked=True)
-            total_amount_formula_cells.append(f"G{current_row}")
-            
-            cell = ws.cell(row=current_row, column=8, value=item.category)
-            cell.font = self.data_font
-            cell.border = self.border
-            cell.protection = Protection(locked=True)
-            
-            cell = ws.cell(row=current_row, column=9, value=item.trade)
-            cell.font = self.data_font
-            cell.border = self.border
-            cell.protection = Protection(locked=True)
-            
-            current_row += 1
-            item_idx += 1
+            if item.category not in items_by_category:
+                items_by_category[item.category] = []
+            items_by_category[item.category].append(item)
         
-        total_row = current_row + 1
-        ws.cell(row=total_row, column=6, value="TOTAL:").font = Font(bold=True)
-        ws.cell(row=total_row, column=6).alignment = Alignment(horizontal='right')
-        ws.cell(row=total_row, column=6).protection = Protection(locked=True)
+        item_idx = 1
+        section_number = 1
+        
+        for category, category_items in items_by_category.items():
+            section_header_cell = ws.cell(row=current_row, column=1)
+            section_header_cell.value = f"SECTION {section_number}: {category.upper()}"
+            section_header_cell.font = Font(bold=True, size=12)
+            section_header_cell.alignment = Alignment(horizontal='center', vertical='center')
+            ws.merge_cells(f'A{current_row}:I{current_row}')
+            current_row += 1
+            
+            for item in category_items:
+                if item.item_code == "SECTION":
+                    cell = ws.cell(row=current_row, column=1)
+                    cell.value = item.description
+                    cell.font = Font(bold=True, size=12)
+                    ws.merge_cells(start_row=current_row, start_column=1, end_row=current_row, end_column=9)
+                    for col in range(1, 10):
+                        cell = ws.cell(row=current_row, column=col)
+                        cell.alignment = Alignment(horizontal='center')
+                    current_row += 1
+                    continue
+                
+                cell = ws.cell(row=current_row, column=1, value=item_idx)
+                cell.font = self.data_font
+                cell.border = self.vertical_border
+                cell.alignment = Alignment(horizontal='center')
+                cell.protection = Protection(locked=True)
+                
+                cell = ws.cell(row=current_row, column=2, value=item.item_code)
+                cell.font = self.data_font
+                cell.border = self.vertical_border
+                cell.protection = Protection(locked=True)
+                
+                # Description
+                cell = ws.cell(row=current_row, column=3, value=item.description)
+                cell.font = self.data_font
+                cell.border = self.vertical_border
+                cell.alignment = Alignment(wrap_text=True)
+                cell.protection = Protection(locked=True)
+                
+                cell = ws.cell(row=current_row, column=4, value=item.unit)
+                cell.font = self.data_font
+                cell.border = self.vertical_border
+                cell.alignment = Alignment(horizontal='center')
+                cell.protection = Protection(locked=True)
+                
+                cell = ws.cell(row=current_row, column=5, value=item.quantity)
+                cell.font = self.data_font
+                cell.border = self.vertical_border
+                cell.number_format = '0.00'
+                cell.alignment = Alignment(horizontal='right')
+                cell.protection = Protection(locked=True)
+                
+                cell = ws.cell(row=current_row, column=6, value=0.00)
+                cell.font = self.data_font
+                cell.border = self.vertical_border
+                cell.number_format = '0.00'
+                cell.alignment = Alignment(horizontal='right')
+                cell.protection = Protection(locked=False)  # UNLOCKED for rate entry
+                
+                amount_cell = ws.cell(row=current_row, column=7)
+                amount_cell.value = f"=E{current_row}*F{current_row}"
+                amount_cell.font = self.data_font
+                amount_cell.border = self.vertical_border
+                amount_cell.number_format = '0.00'
+                amount_cell.alignment = Alignment(horizontal='right')
+                amount_cell.protection = Protection(locked=True)
+                total_amount_formula_cells.append(f"G{current_row}")
+                
+                cell = ws.cell(row=current_row, column=8, value=item.category)
+                cell.font = self.data_font
+                cell.border = self.vertical_border
+                cell.protection = Protection(locked=True)
+                
+                cell = ws.cell(row=current_row, column=9, value=item.trade)
+                cell.font = self.data_font
+                cell.border = self.vertical_border
+                cell.protection = Protection(locked=True)
+                
+                current_row += 1
+                item_idx += 1
+            
+            section_number += 1
+        
+        current_row += 1
+        total_row = current_row
+        
+        total_label_cell = ws.cell(row=total_row, column=6, value="TOTAL:")
+        total_label_cell.font = Font(bold=True, size=12)
+        total_label_cell.alignment = Alignment(horizontal='right')
+        total_label_cell.border = self.full_border
+        total_label_cell.protection = Protection(locked=True)
         
         total_cell = ws.cell(row=total_row, column=7)
         if total_amount_formula_cells:
             total_cell.value = f"=SUM({','.join(total_amount_formula_cells)})"
         else:
             total_cell.value = 0.00
-        total_cell.font = Font(bold=True)
+        total_cell.font = Font(bold=True, size=12)
         total_cell.number_format = '0.00'
         total_cell.alignment = Alignment(horizontal='right')
-        total_cell.border = Border(top=Side(style='thick'), bottom=Side(style='thick'))
+        total_cell.border = self.full_border
         total_cell.protection = Protection(locked=True)
         
-        column_widths = [8, 12, 40, 8, 12, 12, 15, 15, 15]
+        column_widths = [8, 12, 50, 8, 12, 12, 15, 15, 15]  # Wider description column
         for col, width in enumerate(column_widths, 1):
-            ws.column_dimensions[ws.cell(row=1, column=col).column_letter].width = width
+            column_letter = chr(64 + col)  # Convert column number to letter (A, B, C, etc.)
+            ws.column_dimensions[column_letter].width = width
+        
+        for row in range(1, current_row + 1):
+            cell = ws.cell(row=row, column=1)
+            if cell.fill and cell.fill.start_color.rgb in ["FF366092", "FF4472C4"]:  # Header/section rows
+                ws.row_dimensions[row].height = 25
+            else:
+                ws.row_dimensions[row].height = 18
         
         instruction_row = total_row + 3
         ws.cell(row=instruction_row, column=1, value="INSTRUCTIONS FOR CONTRACTORS:")
-        ws.cell(row=instruction_row, column=1).font = Font(bold=True, color="FF0000")
+        ws.cell(row=instruction_row, column=1).font = Font(bold=True)
         
         instructions = [
-            "1. Only the RATE column (highlighted in yellow) can be edited",
+            "1. Only the RATE column can be edited",
             "2. Enter your rates in the appropriate currency",
             "3. The AMOUNT column will calculate automatically",
             "4. Do not modify any other cells - they are protected",
@@ -443,8 +631,7 @@ class ExcelGenerator:
         for col, header in enumerate(headers, 1):
             cell = ws.cell(row=header_row, column=col, value=header)
             cell.font = self.header_font
-            cell.fill = self.header_fill
-            cell.border = self.border
+            cell.border = self.full_border
             cell.alignment = Alignment(horizontal='center')
         
         current_row = header_row + 1
@@ -461,9 +648,7 @@ class ExcelGenerator:
             
             if bid.get('rank') == 1:
                 for col in range(1, 7):
-                    ws.cell(row=current_row, column=col).fill = PatternFill(
-                        start_color="90EE90", end_color="90EE90", fill_type="solid"
-                    )
+                    ws.cell(row=current_row, column=col).font = Font(bold=True)
             
             current_row += 1
         
