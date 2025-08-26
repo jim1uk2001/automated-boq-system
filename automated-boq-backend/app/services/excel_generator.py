@@ -112,11 +112,14 @@ class ExcelGenerator:
     def _create_boq_page(self, ws, project: Project, boq_items: List[BOQItem]):
         """Create main BOQ page with professional sectioned formatting"""
         headers = ['Item', 'Description of Work (SMM7)', 'Unit', 'Quantity', 'Rate (£)', 'Amount (£)']
+        
+        column_widths = [6.8, 80.5, 6.8, 13.2, 12.5, 14.0]  # Professional SMM7 template column widths
+        
         for col_num, header in enumerate(headers, 1):
             cell = ws.cell(row=2, column=col_num, value=header)
             cell.font = Font(bold=True)
             cell.alignment = Alignment(horizontal='center')
-            ws.column_dimensions[get_column_letter(col_num)].width = 25
+            ws.column_dimensions[get_column_letter(col_num)].width = column_widths[col_num - 1]
 
         grouped_items = {}
         for item in boq_items:
@@ -145,10 +148,12 @@ class ExcelGenerator:
                 ws.cell(row=row, column=5, value='')  # Rate (editable)
                 ws.cell(row=row, column=6, value=f'=D{row}*E{row}')  # Amount formula
                 
+                ws.row_dimensions[row].height = 25
+                
                 for col in range(1, 7):
                     cell = ws.cell(row=row, column=col)
                     cell.border = self.thin_border
-                    cell.alignment = Alignment(horizontal='left' if col == 2 else 'center')
+                    cell.alignment = Alignment(horizontal='left' if col == 2 else 'center', wrap_text=True if col == 2 else False)
                     if col == 5:  # Rate column - editable
                         cell.protection = Protection(locked=False)
                 

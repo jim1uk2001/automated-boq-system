@@ -250,20 +250,7 @@ class BOQGenerator:
             category="concrete", trade="civil", measurement_standard=MeasurementStandard.SMM7
         ))
         
-        opening_area = (door_count * 2.1 * 0.9) + (window_count * 1.5 * 1.2)  # Typical door/window sizes
-        boq_items.append(BOQItem(
-            project_id=project_id, drawing_id=drawing_id,
-            item_code="C1.6", description="Deductions for window openings",
-            unit="m²", quantity=round(window_count * 1.8, 2),
-            category="deductions", trade="civil", measurement_standard=MeasurementStandard.SMM7
-        ))
-        
-        boq_items.append(BOQItem(
-            project_id=project_id, drawing_id=drawing_id,
-            item_code="C1.7", description="Deductions for door openings",
-            unit="m²", quantity=round(door_count * 1.9, 2),
-            category="deductions", trade="civil", measurement_standard=MeasurementStandard.SMM7
-        ))
+        opening_area = (door_count * 2.1 * 0.9) + (window_count * 1.5 * 1.2)  # Keep for calculations
         
         internal_wall_length = total_building_area * 0.6  # Estimate internal walls
         
@@ -489,16 +476,41 @@ class BOQGenerator:
         ))
         
         socket_count = building_config.get('sockets_per_house', 25)
+        light_count = max(bedroom_count + 4, 10)  # Bedrooms + living areas + kitchen + bathrooms
+        switch_count = light_count  # One switch per light fitting typically
+        wiring_length = total_building_area * 0.8  # Estimate wiring length based on building area
+        
         boq_items.append(BOQItem(
             project_id=project_id, drawing_id=drawing_id,
-            item_code="F2.1", description="Lighting points, switches & sockets",
+            item_code="F2.1", description="LED ceiling light fittings, supply and fix complete",
+            unit="no.", quantity=light_count,
+            category="electrical", trade="electrical", measurement_standard=MeasurementStandard.SMM7
+        ))
+        
+        boq_items.append(BOQItem(
+            project_id=project_id, drawing_id=drawing_id,
+            item_code="F2.2", description="Socket outlets 13A, supply and fix complete",
             unit="no.", quantity=socket_count,
             category="electrical", trade="electrical", measurement_standard=MeasurementStandard.SMM7
         ))
         
         boq_items.append(BOQItem(
             project_id=project_id, drawing_id=drawing_id,
-            item_code="F2.2", description="Consumer unit & wiring",
+            item_code="F2.3", description="Light switches single pole, supply and fix complete",
+            unit="no.", quantity=switch_count,
+            category="electrical", trade="electrical", measurement_standard=MeasurementStandard.SMM7
+        ))
+        
+        boq_items.append(BOQItem(
+            project_id=project_id, drawing_id=drawing_id,
+            item_code="F2.4", description="2.5mm² PVC insulated copper cable in conduit",
+            unit="m", quantity=round(wiring_length, 2),
+            category="electrical", trade="electrical", measurement_standard=MeasurementStandard.SMM7
+        ))
+        
+        boq_items.append(BOQItem(
+            project_id=project_id, drawing_id=drawing_id,
+            item_code="F2.5", description="Consumer unit and distribution board",
             unit="item", quantity=1,
             category="electrical", trade="electrical", measurement_standard=MeasurementStandard.SMM7
         ))
@@ -506,7 +518,7 @@ class BOQGenerator:
         smoke_alarm_count = max(bedroom_count + 2, 5)  # Bedrooms + hallways + living
         boq_items.append(BOQItem(
             project_id=project_id, drawing_id=drawing_id,
-            item_code="F2.3", description="Smoke alarms",
+            item_code="F2.6", description="Smoke alarms",
             unit="no.", quantity=smoke_alarm_count,
             category="electrical", trade="electrical", measurement_standard=MeasurementStandard.SMM7
         ))
