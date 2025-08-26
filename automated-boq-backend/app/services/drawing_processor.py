@@ -9,12 +9,14 @@ import os
 import tempfile
 import logging
 from ..models import Drawing, DrawingType
+from .geometric_room_detector import GeometricRoomDetector
 
 logger = logging.getLogger(__name__)
 
 class DrawingProcessor:
     def __init__(self):
         self.easyocr_reader = easyocr.Reader(['en'])
+        self.geometric_room_detector = GeometricRoomDetector()
         
     async def process_drawing(self, drawing: Drawing, file_content: bytes) -> Dict[str, Any]:
         """Process a drawing file and extract dimensions and elements"""
@@ -63,7 +65,8 @@ class DrawingProcessor:
                 'dimensions': [],
                 'text_annotations': [],
                 'scale_info': None,
-                'drawing_type': None
+                'drawing_type': None,
+                'room_types': {}
             }
             
             for page_num in range(len(doc)):
@@ -85,6 +88,25 @@ class DrawingProcessor:
                 
                 if not results['drawing_type'] and page_results['drawing_type']:
                     results['drawing_type'] = page_results['drawing_type']
+                
+                try:
+                    detected_rooms = self.geometric_room_detector.detect_rooms(temp_path, page_num)
+                    if detected_rooms:
+                        for room in detected_rooms:
+                            if room['label'] and not room['is_external']:
+                                room_name = room['label'].strip()
+                                results['room_types'][room_name] = {
+                                    'polygon': room['polygon'],
+                                    'area': room['area'],
+                                    'page': page_num
+                                }
+                        logger.info(f"Geometric room detection found {len(detected_rooms)} rooms on page {page_num}")
+                    else:
+                        logger.warning(f"No rooms detected geometrically on page {page_num}")
+                except Exception as e:
+                    logger.warning(f"Geometric room detection failed on page {page_num}: {e}")
+                    if 'room_types' in page_results:
+                        results['room_types'].update(page_results.get('room_types', {}))
             
             doc.close()
             return results
@@ -107,7 +129,8 @@ class DrawingProcessor:
                 'dimensions': [],
                 'text_annotations': [],
                 'scale_info': None,
-                'drawing_type': None
+                'drawing_type': None,
+                'room_types': {}
             }
             
             for entity in modelspace:
@@ -152,6 +175,23 @@ class DrawingProcessor:
                     })
             
             results['drawing_type'] = self._classify_autocad_drawing(doc)
+            
+            try:
+                detected_rooms = self.geometric_room_detector.detect_rooms(temp_path)
+                if detected_rooms:
+                    for room in detected_rooms:
+                        if room['label'] and not room['is_external']:
+                            room_name = room['label'].strip()
+                            results['room_types'][room_name] = {
+                                'polygon': room['polygon'],
+                                'area': room['area'],
+                                'source': 'geometric'
+                            }
+                    logger.info(f"Geometric room detection found {len(detected_rooms)} rooms in DXF/DWG")
+                else:
+                    logger.warning(f"No rooms detected geometrically in DXF/DWG file")
+            except Exception as e:
+                logger.warning(f"Geometric room detection failed for DXF/DWG: {e}")
             
             return results
             
@@ -249,31 +289,6 @@ class DrawingProcessor:
                         if class_match:
                             building_types[f"Class {class_match.group(1).upper()} Building"] = bbox_converted
                     
-                    room_types = {}
-                    if re.search(r'kitchen|cook', text_lower):
-                        if "room_types" not in results:
-                            results["room_types"] = {}
-                        results["room_types"]["Kitchen"] = bbox_converted
-                    elif re.search(r'bathroom|bath|wc|toilet|shower', text_lower):
-                        if "room_types" not in results:
-                            results["room_types"] = {}
-                        results["room_types"]["Bathroom"] = bbox_converted
-                    elif re.search(r'bedroom|bed\s+room|sleeping', text_lower):
-                        if "room_types" not in results:
-                            results["room_types"] = {}
-                        results["room_types"]["Bedroom"] = bbox_converted
-                    elif re.search(r'living\s+room|lounge|sitting', text_lower):
-                        if "room_types" not in results:
-                            results["room_types"] = {}
-                        results["room_types"]["Living Room"] = bbox_converted
-                    elif re.search(r'dining\s+room|dining', text_lower):
-                        if "room_types" not in results:
-                            results["room_types"] = {}
-                        results["room_types"]["Dining Room"] = bbox_converted
-                    elif re.search(r'utility|laundry', text_lower):
-                        if "room_types" not in results:
-                            results["room_types"] = {}
-                        results["room_types"]["Utility Room"] = bbox_converted
                     
                     if re.search(r'render|rendered|external\s+render', text_lower):
                         if "wall_finishes" not in results:

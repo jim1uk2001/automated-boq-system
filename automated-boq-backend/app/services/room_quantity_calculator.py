@@ -84,7 +84,7 @@ class RoomQuantityCalculator:
         
     def _estimate_room_areas(self, room_data: Dict[str, Any], 
                            elements: List[Dict]) -> Dict[str, float]:
-        """Estimate room areas from detected elements and room types"""
+        """Calculate room areas from geometric room detection or fallback to estimates"""
         room_areas = {}
         
         default_areas = {
@@ -96,14 +96,45 @@ class RoomQuantityCalculator:
         
         detected_rooms = room_data.get('room_types', {})
         
-        for room_name in detected_rooms:
-            if room_name in default_areas:
-                room_areas[room_name] = default_areas[room_name]
+        for room_name, room_info in detected_rooms.items():
+            if isinstance(room_info, dict) and 'area' in room_info:
+                room_areas[room_name] = float(room_info['area'])
+                print(f"Using geometric area for {room_name}: {room_info['area']:.2f} sq units")
+            elif isinstance(room_info, dict) and 'polygon' in room_info:
+                polygon_coords = room_info['polygon']
+                if len(polygon_coords) >= 3:
+                    area = self._calculate_polygon_area(polygon_coords)
+                    room_areas[room_name] = area
+                    print(f"Calculated area for {room_name}: {area:.2f} sq units from polygon")
+                else:
+                    room_areas[room_name] = default_areas.get(room_name, 10.0)
+            else:
+                room_areas[room_name] = default_areas.get(room_name, 10.0)
                 
         if not room_areas:
+            print("No geometric rooms detected, using default room layout")
             room_areas = default_areas
+        else:
+            print(f"Using geometric room areas for {len(room_areas)} rooms")
             
         return room_areas
+    
+    def _calculate_polygon_area(self, polygon_coords: List[Tuple[float, float]]) -> float:
+        """Calculate area of polygon using shoelace formula"""
+        if len(polygon_coords) < 3:
+            return 0.0
+        
+        coords = polygon_coords[:]
+        if coords[0] != coords[-1]:
+            coords.append(coords[0])
+        
+        area = 0.0
+        n = len(coords) - 1
+        for i in range(n):
+            area += coords[i][0] * coords[i+1][1]
+            area -= coords[i+1][0] * coords[i][1]
+        
+        return abs(area) / 2.0
         
     def _calculate_room_quantity(self, item: BOQItem, room_area: float, 
                                total_area: float) -> float:

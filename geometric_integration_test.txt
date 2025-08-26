@@ -1,0 +1,2075 @@
+Neither CUDA nor MPS are available - defaulting to CPU. Note: This module is much faster with a GPU.
+/home/ubuntu/.pyenv/versions/3.12.8/lib/python3.12/site-packages/torch/utils/data/dataloader.py:666: UserWarning: 'pin_memory' argument is set as true but no accelerator is found, then device pinned memory won't be used.
+  warnings.warn(warn_msg)
+/home/ubuntu/automated-boq-system/test_house_boq_generation.py:85: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  drawing.processed_at = datetime.utcnow()
+/home/ubuntu/.pyenv/versions/3.12.8/lib/python3.12/site-packages/torch/utils/data/dataloader.py:666: UserWarning: 'pin_memory' argument is set as true but no accelerator is found, then device pinned memory won't be used.
+  warnings.warn(warn_msg)
+/home/ubuntu/automated-boq-system/test_house_boq_generation.py:85: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  drawing.processed_at = datetime.utcnow()
+/home/ubuntu/.pyenv/versions/3.12.8/lib/python3.12/site-packages/torch/utils/data/dataloader.py:666: UserWarning: 'pin_memory' argument is set as true but no accelerator is found, then device pinned memory won't be used.
+  warnings.warn(warn_msg)
+/home/ubuntu/automated-boq-system/test_house_boq_generation.py:85: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  drawing.processed_at = datetime.utcnow()
+🏠 Testing BOQ generation with user's two storey house drawings...
+✅ All house drawings found
+📁 Created project: Two Storey House BOQ Generation Test
+
+📄 Processing Drawing 1: House Elevations - Front, Rear, Side views
+   📋 Processing house_elevations.pdf...
+   ✅ Successfully processed house_elevations.pdf
+      - Text annotations: 90
+      - Elements detected: 3232
+      - Scale: not detected
+      - Drawing type: DrawingType.ARCHITECTURAL
+
+📄 Processing Drawing 2: Floor Plans - Ground and First Floor layouts
+   📋 Processing house_floor_plans.pdf...
+   ✅ Successfully processed house_floor_plans.pdf
+      - Text annotations: 85
+      - Elements detected: 2925
+      - Scale: not detected
+      - Drawing type: DrawingType.ARCHITECTURAL
+
+📄 Processing Drawing 3: Site Layout Plan - Property boundaries and positioning
+   📋 Processing house_site_plan.pdf...
+   ✅ Successfully processed house_site_plan.pdf
+      - Text annotations: 135
+      - Elements detected: 6113
+      - Scale: not detected
+      - Drawing type: DrawingType.ARCHITECTURAL
+
+📊 Generating BOQ from 3 processed drawings...
+DEBUG: BOQ Generator processing 3 drawings for same building
+DEBUG: Collecting elements from drawing e4839625-63f5-4ff9-9eca-52834cded334 (DrawingType.ARCHITECTURAL) with 3232 elements, 90 text annotations, and 10 room types
+DEBUG: Collecting elements from drawing cd7b1747-924c-4820-9963-b170f7e3168c (DrawingType.ARCHITECTURAL) with 2925 elements, 85 text annotations, and 28 room types
+DEBUG: Collecting elements from drawing 20dd7139-4b72-4fc1-bf43-718854bc26a2 (DrawingType.ARCHITECTURAL) with 6113 elements, 135 text annotations, and 50 room types
+DEBUG: Processing 12270 total elements, 310 text annotations, and 82 room types from 3 drawings as single building
+DEBUG: Consolidated elements - 6503 lines, 5767 circles, 0 rectangles, 0 polylines
+DEBUG: Consolidated building area: 100m²
+DEBUG: Estimated building area: 100m²
+DEBUG: Generated 55 comprehensive SMM7 BOQ items
+Using geometric area for mceldowneycolm@gmail.com | +353 (0)85 8370771 | architect, mriai
+colm mceldowney | E. | T.: 11900.00 sq units
+Using geometric area for Drawing Title | Elevations: 9405.00 sq units
+Using geometric area for Project | Dwelling House at 43 Orchard Grove,
+Ballyraine, Letterkenny, Co. Donegal
+for Eamonn & Claire McEldowney: 6862.55 sq units
+Using geometric area for 9510: 896.00 sq units
+Using geometric area for Scale | 1:100 @ A3
+Jan. 2025: 1900.00 sq units
+Using geometric area for Drawing No. | PL004
+CM: 1805.00 sq units
+Using geometric area for Date: 1400.00 sq units
+Using geometric area for Drawn By: 438.41 sq units
+Using geometric area for 3225: 576.00 sq units
+Using geometric area for RECEIVED: 31/01/2025: 425.70 sq units
+Using geometric area for St. | LIVING: 32994.00 sq units
+Using geometric area for BEDROOM 3 | LANDING | FF FFL
++20.560: 30723.50 sq units
+Using geometric area for Walk-in: 16650.00 sq units
+Using geometric area for 11080: 9371.56 sq units
+Using geometric area for Drawing Title | Ground Floor & First Floor: 9350.00 sq units
+Using geometric area for 4015: 8067.05 sq units
+Using geometric area for 4015 | planter: 8010.86 sq units
+Using geometric area for 8600: 4258.00 sq units
+Using geometric area for 3.0m x 4.5m
+proprietary
+metal garden
+shed on conc.
+slab: 3402.00 sq units
+Using geometric area for concrete path: 798.00 sq units
+Using geometric area for Scale | 1:100 / 1:200 @ A3
+Jan. 2025: 1900.00 sq units
+Using geometric area for 10500
+1650: 1795.62 sq units
+Using geometric area for Drawing No. | PL003
+CM: 1710.00 sq units
+Using geometric area for BEDROOM 2: 1425.00 sq units
+Using geometric area for MASTER: 1383.00 sq units
+Using geometric area for 1900: 1378.00 sq units
+Using geometric area for BATHROOM
+E/S: 1145.00 sq units
+Using geometric area for KITCHEN: 1002.43 sq units
+Using geometric area for Flat Roof: 608.25 sq units
+Using geometric area for St.: 459.00 sq units
+Using geometric area for 11080
+2500: 324.00 sq units
+Using geometric area for A: 258.50 sq units
+Using geometric area for 2500: 234.00 sq units
+Using geometric area for HALL
+SITTING: 215.00 sq units
+Using geometric area for Drawing Title: 6979.96 sq units
+Using geometric area for 17.778 | 17.681 | 17.735
+17.829 | fm/h: 6180.59 sq units
+Using geometric area for 2 Storey
+FFL = 15.89 | 4: 5893.08 sq units
+Using geometric area for mceldowneycolm@gmail.com | +353 (0)85 8370771 | E. | T.: 4573.69 sq units
+Using geometric area for 17.305 | Driveway | sm/h
+sm/h: 4229.05 sq units
+Using geometric area for Connection to existing public mains water >>: 2907.83 sq units
+Using geometric area for 17.340: 2400.98 sq units
+Using geometric area for 17.773 | 17.875: 2302.79 sq units
+Using geometric area for Garden: 1499.88 sq units
+Using geometric area for 17.614 | FH: 1376.23 sq units
+Using geometric area for 17.066: 1231.31 sq units
+Using geometric area for 17.817: 1115.74 sq units
+Using geometric area for sm/h: 139.81 sq units
+Using geometric area for overhead wire: 576.84 sq units
+Using geometric area for Patio: 537.70 sq units
+Using geometric area for WM | LP: 527.20 sq units
+Using geometric area for RS: 520.07 sq units
+Using geometric area for 17.411: 501.10 sq units
+Using geometric area for 2 Storey
+FFL = 19.38
+RL = 26.84
+2 Storey
+FFL = 19.38
+RL
+26 84: 490.18 sq units
+Using geometric area for 17.327: 435.16 sq units
+Using geometric area for DWELLING
+RIDGE 24.905
+EAVES 21.958
+FFL 16.765: 381.59 sq units
+Using geometric area for 5: 372.49 sq units
+Using geometric area for 17.125: 358.96 sq units
+Using geometric area for 17.576: 339.52 sq units
+Using geometric area for 44: 310.33 sq units
+Using geometric area for 17.706 | 17.768
+17.879: 309.50 sq units
+Using geometric area for 17.370: 273.74 sq units
+Using geometric area for 16.984: 230.58 sq units
+Using geometric area for 16.905: 217.88 sq units
+Using geometric area for 18.047: 196.84 sq units
+Using geometric area for 10.3m
+10.8m: 188.03 sq units
+Using geometric area for 17.573: 182.68 sq units
+Using geometric area for Proposed
+FFL +17.500: 180.24 sq units
+Using geometric area for 17.00: 175.60 sq units
+Using geometric area for 6: 171.44 sq units
+Using geometric area for 17.148: 169.12 sq units
+Using geometric area for 17.503: 168.75 sq units
+Using geometric area for 17.397: 162.57 sq units
+Using geometric area for 16.893: 160.46 sq units
+Using geometric area for 16.697: 149.86 sq units
+Using geometric area for SHED: 149.76 sq units
+Using geometric area for 16.971: 147.56 sq units
+Using geometric area for 17.425: 140.83 sq units
+Using geometric area for 17.098: 130.00 sq units
+Using geometric area for fm/h: 125.45 sq units
+Using geometric area for 17.50: 116.61 sq units
+Using geometric area for 17.287: 113.26 sq units
+Using geometric area for 17.852: 107.17 sq units
+Using geometric room areas for 82 rooms
+Using geometric area for mceldowneycolm@gmail.com | +353 (0)85 8370771 | architect, mriai
+colm mceldowney | E. | T.: 11900.00 sq units
+Using geometric area for Drawing Title | Elevations: 9405.00 sq units
+Using geometric area for Project | Dwelling House at 43 Orchard Grove,
+Ballyraine, Letterkenny, Co. Donegal
+for Eamonn & Claire McEldowney: 6862.55 sq units
+Using geometric area for 9510: 896.00 sq units
+Using geometric area for Scale | 1:100 @ A3
+Jan. 2025: 1900.00 sq units
+Using geometric area for Drawing No. | PL004
+CM: 1805.00 sq units
+Using geometric area for Date: 1400.00 sq units
+Using geometric area for Drawn By: 438.41 sq units
+Using geometric area for 3225: 576.00 sq units
+Using geometric area for RECEIVED: 31/01/2025: 425.70 sq units
+Using geometric area for St. | LIVING: 32994.00 sq units
+Using geometric area for BEDROOM 3 | LANDING | FF FFL
++20.560: 30723.50 sq units
+Using geometric area for Walk-in: 16650.00 sq units
+Using geometric area for 11080: 9371.56 sq units
+Using geometric area for Drawing Title | Ground Floor & First Floor: 9350.00 sq units
+Using geometric area for 4015: 8067.05 sq units
+Using geometric area for 4015 | planter: 8010.86 sq units
+Using geometric area for 8600: 4258.00 sq units
+Using geometric area for 3.0m x 4.5m
+proprietary
+metal garden
+shed on conc.
+slab: 3402.00 sq units
+Using geometric area for concrete path: 798.00 sq units
+Using geometric area for Scale | 1:100 / 1:200 @ A3
+Jan. 2025: 1900.00 sq units
+Using geometric area for 10500
+1650: 1795.62 sq units
+Using geometric area for Drawing No. | PL003
+CM: 1710.00 sq units
+Using geometric area for BEDROOM 2: 1425.00 sq units
+Using geometric area for MASTER: 1383.00 sq units
+Using geometric area for 1900: 1378.00 sq units
+Using geometric area for BATHROOM
+E/S: 1145.00 sq units
+Using geometric area for KITCHEN: 1002.43 sq units
+Using geometric area for Flat Roof: 608.25 sq units
+Using geometric area for St.: 459.00 sq units
+Using geometric area for 11080
+2500: 324.00 sq units
+Using geometric area for A: 258.50 sq units
+Using geometric area for 2500: 234.00 sq units
+Using geometric area for HALL
+SITTING: 215.00 sq units
+Using geometric area for Drawing Title: 6979.96 sq units
+Using geometric area for 17.778 | 17.681 | 17.735
+17.829 | fm/h: 6180.59 sq units
+Using geometric area for 2 Storey
+FFL = 15.89 | 4: 5893.08 sq units
+Using geometric area for mceldowneycolm@gmail.com | +353 (0)85 8370771 | E. | T.: 4573.69 sq units
+Using geometric area for 17.305 | Driveway | sm/h
+sm/h: 4229.05 sq units
+Using geometric area for Connection to existing public mains water >>: 2907.83 sq units
+Using geometric area for 17.340: 2400.98 sq units
+Using geometric area for 17.773 | 17.875: 2302.79 sq units
+Using geometric area for Garden: 1499.88 sq units
+Using geometric area for 17.614 | FH: 1376.23 sq units
+Using geometric area for 17.066: 1231.31 sq units
+Using geometric area for 17.817: 1115.74 sq units
+Using geometric area for sm/h: 139.81 sq units
+Using geometric area for overhead wire: 576.84 sq units
+Using geometric area for Patio: 537.70 sq units
+Using geometric area for WM | LP: 527.20 sq units
+Using geometric area for RS: 520.07 sq units
+Using geometric area for 17.411: 501.10 sq units
+Using geometric area for 2 Storey
+FFL = 19.38
+RL = 26.84
+2 Storey
+FFL = 19.38
+RL
+26 84: 490.18 sq units
+Using geometric area for 17.327: 435.16 sq units
+Using geometric area for DWELLING
+RIDGE 24.905
+EAVES 21.958
+FFL 16.765: 381.59 sq units
+Using geometric area for 5: 372.49 sq units
+Using geometric area for 17.125: 358.96 sq units
+Using geometric area for 17.576: 339.52 sq units
+Using geometric area for 44: 310.33 sq units
+Using geometric area for 17.706 | 17.768
+17.879: 309.50 sq units
+Using geometric area for 17.370: 273.74 sq units
+Using geometric area for 16.984: 230.58 sq units
+Using geometric area for 16.905: 217.88 sq units
+Using geometric area for 18.047: 196.84 sq units
+Using geometric area for 10.3m
+10.8m: 188.03 sq units
+Using geometric area for 17.573: 182.68 sq units
+Using geometric area for Proposed
+FFL +17.500: 180.24 sq units
+Using geometric area for 17.00: 175.60 sq units
+Using geometric area for 6: 171.44 sq units
+Using geometric area for 17.148: 169.12 sq units
+Using geometric area for 17.503: 168.75 sq units
+Using geometric area for 17.397: 162.57 sq units
+Using geometric area for 16.893: 160.46 sq units
+Using geometric area for 16.697: 149.86 sq units
+Using geometric area for SHED: 149.76 sq units
+Using geometric area for 16.971: 147.56 sq units
+Using geometric area for 17.425: 140.83 sq units
+Using geometric area for 17.098: 130.00 sq units
+Using geometric area for fm/h: 125.45 sq units
+Using geometric area for 17.50: 116.61 sq units
+Using geometric area for 17.287: 113.26 sq units
+Using geometric area for 17.852: 107.17 sq units
+Using geometric room areas for 82 rooms
+Using geometric area for mceldowneycolm@gmail.com | +353 (0)85 8370771 | architect, mriai
+colm mceldowney | E. | T.: 11900.00 sq units
+Using geometric area for Drawing Title | Elevations: 9405.00 sq units
+Using geometric area for Project | Dwelling House at 43 Orchard Grove,
+Ballyraine, Letterkenny, Co. Donegal
+for Eamonn & Claire McEldowney: 6862.55 sq units
+Using geometric area for 9510: 896.00 sq units
+Using geometric area for Scale | 1:100 @ A3
+Jan. 2025: 1900.00 sq units
+Using geometric area for Drawing No. | PL004
+CM: 1805.00 sq units
+Using geometric area for Date: 1400.00 sq units
+Using geometric area for Drawn By: 438.41 sq units
+Using geometric area for 3225: 576.00 sq units
+Using geometric area for RECEIVED: 31/01/2025: 425.70 sq units
+Using geometric area for St. | LIVING: 32994.00 sq units
+Using geometric area for BEDROOM 3 | LANDING | FF FFL
++20.560: 30723.50 sq units
+Using geometric area for Walk-in: 16650.00 sq units
+Using geometric area for 11080: 9371.56 sq units
+Using geometric area for Drawing Title | Ground Floor & First Floor: 9350.00 sq units
+Using geometric area for 4015: 8067.05 sq units
+Using geometric area for 4015 | planter: 8010.86 sq units
+Using geometric area for 8600: 4258.00 sq units
+Using geometric area for 3.0m x 4.5m
+proprietary
+metal garden
+shed on conc.
+slab: 3402.00 sq units
+Using geometric area for concrete path: 798.00 sq units
+Using geometric area for Scale | 1:100 / 1:200 @ A3
+Jan. 2025: 1900.00 sq units
+Using geometric area for 10500
+1650: 1795.62 sq units
+Using geometric area for Drawing No. | PL003
+CM: 1710.00 sq units
+Using geometric area for BEDROOM 2: 1425.00 sq units
+Using geometric area for MASTER: 1383.00 sq units
+Using geometric area for 1900: 1378.00 sq units
+Using geometric area for BATHROOM
+E/S: 1145.00 sq units
+Using geometric area for KITCHEN: 1002.43 sq units
+Using geometric area for Flat Roof: 608.25 sq units
+Using geometric area for St.: 459.00 sq units
+Using geometric area for 11080
+2500: 324.00 sq units
+Using geometric area for A: 258.50 sq units
+Using geometric area for 2500: 234.00 sq units
+Using geometric area for HALL
+SITTING: 215.00 sq units
+Using geometric area for Drawing Title: 6979.96 sq units
+Using geometric area for 17.778 | 17.681 | 17.735
+17.829 | fm/h: 6180.59 sq units
+Using geometric area for 2 Storey
+FFL = 15.89 | 4: 5893.08 sq units
+Using geometric area for mceldowneycolm@gmail.com | +353 (0)85 8370771 | E. | T.: 4573.69 sq units
+Using geometric area for 17.305 | Driveway | sm/h
+sm/h: 4229.05 sq units
+Using geometric area for Connection to existing public mains water >>: 2907.83 sq units
+Using geometric area for 17.340: 2400.98 sq units
+Using geometric area for 17.773 | 17.875: 2302.79 sq units
+Using geometric area for Garden: 1499.88 sq units
+Using geometric area for 17.614 | FH: 1376.23 sq units
+Using geometric area for 17.066: 1231.31 sq units
+Using geometric area for 17.817: 1115.74 sq units
+Using geometric area for sm/h: 139.81 sq units
+Using geometric area for overhead wire: 576.84 sq units
+Using geometric area for Patio: 537.70 sq units
+Using geometric area for WM | LP: 527.20 sq units
+Using geometric area for RS: 520.07 sq units
+Using geometric area for 17.411: 501.10 sq units
+Using geometric area for 2 Storey
+FFL = 19.38
+RL = 26.84
+2 Storey
+FFL = 19.38
+RL
+26 84: 490.18 sq units
+Using geometric area for 17.327: 435.16 sq units
+Using geometric area for DWELLING
+RIDGE 24.905
+EAVES 21.958
+FFL 16.765: 381.59 sq units
+Using geometric area for 5: 372.49 sq units
+Using geometric area for 17.125: 358.96 sq units
+Using geometric area for 17.576: 339.52 sq units
+Using geometric area for 44: 310.33 sq units
+Using geometric area for 17.706 | 17.768
+17.879: 309.50 sq units
+Using geometric area for 17.370: 273.74 sq units
+Using geometric area for 16.984: 230.58 sq units
+Using geometric area for 16.905: 217.88 sq units
+Using geometric area for 18.047: 196.84 sq units
+Using geometric area for 10.3m
+10.8m: 188.03 sq units
+Using geometric area for 17.573: 182.68 sq units
+Using geometric area for Proposed
+FFL +17.500: 180.24 sq units
+Using geometric area for 17.00: 175.60 sq units
+Using geometric area for 6: 171.44 sq units
+Using geometric area for 17.148: 169.12 sq units
+Using geometric area for 17.503: 168.75 sq units
+Using geometric area for 17.397: 162.57 sq units
+Using geometric area for 16.893: 160.46 sq units
+Using geometric area for 16.697: 149.86 sq units
+Using geometric area for SHED: 149.76 sq units
+Using geometric area for 16.971: 147.56 sq units
+Using geometric area for 17.425: 140.83 sq units
+Using geometric area for 17.098: 130.00 sq units
+Using geometric area for fm/h: 125.45 sq units
+Using geometric area for 17.50: 116.61 sq units
+Using geometric area for 17.287: 113.26 sq units
+Using geometric area for 17.852: 107.17 sq units
+Using geometric room areas for 82 rooms
+Using geometric area for mceldowneycolm@gmail.com | +353 (0)85 8370771 | architect, mriai
+colm mceldowney | E. | T.: 11900.00 sq units
+Using geometric area for Drawing Title | Elevations: 9405.00 sq units
+Using geometric area for Project | Dwelling House at 43 Orchard Grove,
+Ballyraine, Letterkenny, Co. Donegal
+for Eamonn & Claire McEldowney: 6862.55 sq units
+Using geometric area for 9510: 896.00 sq units
+Using geometric area for Scale | 1:100 @ A3
+Jan. 2025: 1900.00 sq units
+Using geometric area for Drawing No. | PL004
+CM: 1805.00 sq units
+Using geometric area for Date: 1400.00 sq units
+Using geometric area for Drawn By: 438.41 sq units
+Using geometric area for 3225: 576.00 sq units
+Using geometric area for RECEIVED: 31/01/2025: 425.70 sq units
+Using geometric area for St. | LIVING: 32994.00 sq units
+Using geometric area for BEDROOM 3 | LANDING | FF FFL
++20.560: 30723.50 sq units
+Using geometric area for Walk-in: 16650.00 sq units
+Using geometric area for 11080: 9371.56 sq units
+Using geometric area for Drawing Title | Ground Floor & First Floor: 9350.00 sq units
+Using geometric area for 4015: 8067.05 sq units
+Using geometric area for 4015 | planter: 8010.86 sq units
+Using geometric area for 8600: 4258.00 sq units
+Using geometric area for 3.0m x 4.5m
+proprietary
+metal garden
+shed on conc.
+slab: 3402.00 sq units
+Using geometric area for concrete path: 798.00 sq units
+Using geometric area for Scale | 1:100 / 1:200 @ A3
+Jan. 2025: 1900.00 sq units
+Using geometric area for 10500
+1650: 1795.62 sq units
+Using geometric area for Drawing No. | PL003
+CM: 1710.00 sq units
+Using geometric area for BEDROOM 2: 1425.00 sq units
+Using geometric area for MASTER: 1383.00 sq units
+Using geometric area for 1900: 1378.00 sq units
+Using geometric area for BATHROOM
+E/S: 1145.00 sq units
+Using geometric area for KITCHEN: 1002.43 sq units
+Using geometric area for Flat Roof: 608.25 sq units
+Using geometric area for St.: 459.00 sq units
+Using geometric area for 11080
+2500: 324.00 sq units
+Using geometric area for A: 258.50 sq units
+Using geometric area for 2500: 234.00 sq units
+Using geometric area for HALL
+SITTING: 215.00 sq units
+Using geometric area for Drawing Title: 6979.96 sq units
+Using geometric area for 17.778 | 17.681 | 17.735
+17.829 | fm/h: 6180.59 sq units
+Using geometric area for 2 Storey
+FFL = 15.89 | 4: 5893.08 sq units
+Using geometric area for mceldowneycolm@gmail.com | +353 (0)85 8370771 | E. | T.: 4573.69 sq units
+Using geometric area for 17.305 | Driveway | sm/h
+sm/h: 4229.05 sq units
+Using geometric area for Connection to existing public mains water >>: 2907.83 sq units
+Using geometric area for 17.340: 2400.98 sq units
+Using geometric area for 17.773 | 17.875: 2302.79 sq units
+Using geometric area for Garden: 1499.88 sq units
+Using geometric area for 17.614 | FH: 1376.23 sq units
+Using geometric area for 17.066: 1231.31 sq units
+Using geometric area for 17.817: 1115.74 sq units
+Using geometric area for sm/h: 139.81 sq units
+Using geometric area for overhead wire: 576.84 sq units
+Using geometric area for Patio: 537.70 sq units
+Using geometric area for WM | LP: 527.20 sq units
+Using geometric area for RS: 520.07 sq units
+Using geometric area for 17.411: 501.10 sq units
+Using geometric area for 2 Storey
+FFL = 19.38
+RL = 26.84
+2 Storey
+FFL = 19.38
+RL
+26 84: 490.18 sq units
+Using geometric area for 17.327: 435.16 sq units
+Using geometric area for DWELLING
+RIDGE 24.905
+EAVES 21.958
+FFL 16.765: 381.59 sq units
+Using geometric area for 5: 372.49 sq units
+Using geometric area for 17.125: 358.96 sq units
+Using geometric area for 17.576: 339.52 sq units
+Using geometric area for 44: 310.33 sq units
+Using geometric area for 17.706 | 17.768
+17.879: 309.50 sq units
+Using geometric area for 17.370: 273.74 sq units
+Using geometric area for 16.984: 230.58 sq units
+Using geometric area for 16.905: 217.88 sq units
+Using geometric area for 18.047: 196.84 sq units
+Using geometric area for 10.3m
+10.8m: 188.03 sq units
+Using geometric area for 17.573: 182.68 sq units
+Using geometric area for Proposed
+FFL +17.500: 180.24 sq units
+Using geometric area for 17.00: 175.60 sq units
+Using geometric area for 6: 171.44 sq units
+Using geometric area for 17.148: 169.12 sq units
+Using geometric area for 17.503: 168.75 sq units
+Using geometric area for 17.397: 162.57 sq units
+Using geometric area for 16.893: 160.46 sq units
+Using geometric area for 16.697: 149.86 sq units
+Using geometric area for SHED: 149.76 sq units
+Using geometric area for 16.971: 147.56 sq units
+Using geometric area for 17.425: 140.83 sq units
+Using geometric area for 17.098: 130.00 sq units
+Using geometric area for fm/h: 125.45 sq units
+Using geometric area for 17.50: 116.61 sq units
+Using geometric area for 17.287: 113.26 sq units
+Using geometric area for 17.852: 107.17 sq units
+Using geometric room areas for 82 rooms
+Using geometric area for mceldowneycolm@gmail.com | +353 (0)85 8370771 | architect, mriai
+colm mceldowney | E. | T.: 11900.00 sq units
+Using geometric area for Drawing Title | Elevations: 9405.00 sq units
+Using geometric area for Project | Dwelling House at 43 Orchard Grove,
+Ballyraine, Letterkenny, Co. Donegal
+for Eamonn & Claire McEldowney: 6862.55 sq units
+Using geometric area for 9510: 896.00 sq units
+Using geometric area for Scale | 1:100 @ A3
+Jan. 2025: 1900.00 sq units
+Using geometric area for Drawing No. | PL004
+CM: 1805.00 sq units
+Using geometric area for Date: 1400.00 sq units
+Using geometric area for Drawn By: 438.41 sq units
+Using geometric area for 3225: 576.00 sq units
+Using geometric area for RECEIVED: 31/01/2025: 425.70 sq units
+Using geometric area for St. | LIVING: 32994.00 sq units
+Using geometric area for BEDROOM 3 | LANDING | FF FFL
++20.560: 30723.50 sq units
+Using geometric area for Walk-in: 16650.00 sq units
+Using geometric area for 11080: 9371.56 sq units
+Using geometric area for Drawing Title | Ground Floor & First Floor: 9350.00 sq units
+Using geometric area for 4015: 8067.05 sq units
+Using geometric area for 4015 | planter: 8010.86 sq units
+Using geometric area for 8600: 4258.00 sq units
+Using geometric area for 3.0m x 4.5m
+proprietary
+metal garden
+shed on conc.
+slab: 3402.00 sq units
+Using geometric area for concrete path: 798.00 sq units
+Using geometric area for Scale | 1:100 / 1:200 @ A3
+Jan. 2025: 1900.00 sq units
+Using geometric area for 10500
+1650: 1795.62 sq units
+Using geometric area for Drawing No. | PL003
+CM: 1710.00 sq units
+Using geometric area for BEDROOM 2: 1425.00 sq units
+Using geometric area for MASTER: 1383.00 sq units
+Using geometric area for 1900: 1378.00 sq units
+Using geometric area for BATHROOM
+E/S: 1145.00 sq units
+Using geometric area for KITCHEN: 1002.43 sq units
+Using geometric area for Flat Roof: 608.25 sq units
+Using geometric area for St.: 459.00 sq units
+Using geometric area for 11080
+2500: 324.00 sq units
+Using geometric area for A: 258.50 sq units
+Using geometric area for 2500: 234.00 sq units
+Using geometric area for HALL
+SITTING: 215.00 sq units
+Using geometric area for Drawing Title: 6979.96 sq units
+Using geometric area for 17.778 | 17.681 | 17.735
+17.829 | fm/h: 6180.59 sq units
+Using geometric area for 2 Storey
+FFL = 15.89 | 4: 5893.08 sq units
+Using geometric area for mceldowneycolm@gmail.com | +353 (0)85 8370771 | E. | T.: 4573.69 sq units
+Using geometric area for 17.305 | Driveway | sm/h
+sm/h: 4229.05 sq units
+Using geometric area for Connection to existing public mains water >>: 2907.83 sq units
+Using geometric area for 17.340: 2400.98 sq units
+Using geometric area for 17.773 | 17.875: 2302.79 sq units
+Using geometric area for Garden: 1499.88 sq units
+Using geometric area for 17.614 | FH: 1376.23 sq units
+Using geometric area for 17.066: 1231.31 sq units
+Using geometric area for 17.817: 1115.74 sq units
+Using geometric area for sm/h: 139.81 sq units
+Using geometric area for overhead wire: 576.84 sq units
+Using geometric area for Patio: 537.70 sq units
+Using geometric area for WM | LP: 527.20 sq units
+Using geometric area for RS: 520.07 sq units
+Using geometric area for 17.411: 501.10 sq units
+Using geometric area for 2 Storey
+FFL = 19.38
+RL = 26.84
+2 Storey
+FFL = 19.38
+RL
+26 84: 490.18 sq units
+Using geometric area for 17.327: 435.16 sq units
+Using geometric area for DWELLING
+RIDGE 24.905
+EAVES 21.958
+FFL 16.765: 381.59 sq units
+Using geometric area for 5: 372.49 sq units
+Using geometric area for 17.125: 358.96 sq units
+Using geometric area for 17.576: 339.52 sq units
+Using geometric area for 44: 310.33 sq units
+Using geometric area for 17.706 | 17.768
+17.879: 309.50 sq units
+Using geometric area for 17.370: 273.74 sq units
+Using geometric area for 16.984: 230.58 sq units
+Using geometric area for 16.905: 217.88 sq units
+Using geometric area for 18.047: 196.84 sq units
+Using geometric area for 10.3m
+10.8m: 188.03 sq units
+Using geometric area for 17.573: 182.68 sq units
+Using geometric area for Proposed
+FFL +17.500: 180.24 sq units
+Using geometric area for 17.00: 175.60 sq units
+Using geometric area for 6: 171.44 sq units
+Using geometric area for 17.148: 169.12 sq units
+Using geometric area for 17.503: 168.75 sq units
+Using geometric area for 17.397: 162.57 sq units
+Using geometric area for 16.893: 160.46 sq units
+Using geometric area for 16.697: 149.86 sq units
+Using geometric area for SHED: 149.76 sq units
+Using geometric area for 16.971: 147.56 sq units
+Using geometric area for 17.425: 140.83 sq units
+Using geometric area for 17.098: 130.00 sq units
+Using geometric area for fm/h: 125.45 sq units
+Using geometric area for 17.50: 116.61 sq units
+Using geometric area for 17.287: 113.26 sq units
+Using geometric area for 17.852: 107.17 sq units
+Using geometric room areas for 82 rooms
+Using geometric area for mceldowneycolm@gmail.com | +353 (0)85 8370771 | architect, mriai
+colm mceldowney | E. | T.: 11900.00 sq units
+Using geometric area for Drawing Title | Elevations: 9405.00 sq units
+Using geometric area for Project | Dwelling House at 43 Orchard Grove,
+Ballyraine, Letterkenny, Co. Donegal
+for Eamonn & Claire McEldowney: 6862.55 sq units
+Using geometric area for 9510: 896.00 sq units
+Using geometric area for Scale | 1:100 @ A3
+Jan. 2025: 1900.00 sq units
+Using geometric area for Drawing No. | PL004
+CM: 1805.00 sq units
+Using geometric area for Date: 1400.00 sq units
+Using geometric area for Drawn By: 438.41 sq units
+Using geometric area for 3225: 576.00 sq units
+Using geometric area for RECEIVED: 31/01/2025: 425.70 sq units
+Using geometric area for St. | LIVING: 32994.00 sq units
+Using geometric area for BEDROOM 3 | LANDING | FF FFL
++20.560: 30723.50 sq units
+Using geometric area for Walk-in: 16650.00 sq units
+Using geometric area for 11080: 9371.56 sq units
+Using geometric area for Drawing Title | Ground Floor & First Floor: 9350.00 sq units
+Using geometric area for 4015: 8067.05 sq units
+Using geometric area for 4015 | planter: 8010.86 sq units
+Using geometric area for 8600: 4258.00 sq units
+Using geometric area for 3.0m x 4.5m
+proprietary
+metal garden
+shed on conc.
+slab: 3402.00 sq units
+Using geometric area for concrete path: 798.00 sq units
+Using geometric area for Scale | 1:100 / 1:200 @ A3
+Jan. 2025: 1900.00 sq units
+Using geometric area for 10500
+1650: 1795.62 sq units
+Using geometric area for Drawing No. | PL003
+CM: 1710.00 sq units
+Using geometric area for BEDROOM 2: 1425.00 sq units
+Using geometric area for MASTER: 1383.00 sq units
+Using geometric area for 1900: 1378.00 sq units
+Using geometric area for BATHROOM
+E/S: 1145.00 sq units
+Using geometric area for KITCHEN: 1002.43 sq units
+Using geometric area for Flat Roof: 608.25 sq units
+Using geometric area for St.: 459.00 sq units
+Using geometric area for 11080
+2500: 324.00 sq units
+Using geometric area for A: 258.50 sq units
+Using geometric area for 2500: 234.00 sq units
+Using geometric area for HALL
+SITTING: 215.00 sq units
+Using geometric area for Drawing Title: 6979.96 sq units
+Using geometric area for 17.778 | 17.681 | 17.735
+17.829 | fm/h: 6180.59 sq units
+Using geometric area for 2 Storey
+FFL = 15.89 | 4: 5893.08 sq units
+Using geometric area for mceldowneycolm@gmail.com | +353 (0)85 8370771 | E. | T.: 4573.69 sq units
+Using geometric area for 17.305 | Driveway | sm/h
+sm/h: 4229.05 sq units
+Using geometric area for Connection to existing public mains water >>: 2907.83 sq units
+Using geometric area for 17.340: 2400.98 sq units
+Using geometric area for 17.773 | 17.875: 2302.79 sq units
+Using geometric area for Garden: 1499.88 sq units
+Using geometric area for 17.614 | FH: 1376.23 sq units
+Using geometric area for 17.066: 1231.31 sq units
+Using geometric area for 17.817: 1115.74 sq units
+Using geometric area for sm/h: 139.81 sq units
+Using geometric area for overhead wire: 576.84 sq units
+Using geometric area for Patio: 537.70 sq units
+Using geometric area for WM | LP: 527.20 sq units
+Using geometric area for RS: 520.07 sq units
+Using geometric area for 17.411: 501.10 sq units
+Using geometric area for 2 Storey
+FFL = 19.38
+RL = 26.84
+2 Storey
+FFL = 19.38
+RL
+26 84: 490.18 sq units
+Using geometric area for 17.327: 435.16 sq units
+Using geometric area for DWELLING
+RIDGE 24.905
+EAVES 21.958
+FFL 16.765: 381.59 sq units
+Using geometric area for 5: 372.49 sq units
+Using geometric area for 17.125: 358.96 sq units
+Using geometric area for 17.576: 339.52 sq units
+Using geometric area for 44: 310.33 sq units
+Using geometric area for 17.706 | 17.768
+17.879: 309.50 sq units
+Using geometric area for 17.370: 273.74 sq units
+Using geometric area for 16.984: 230.58 sq units
+Using geometric area for 16.905: 217.88 sq units
+Using geometric area for 18.047: 196.84 sq units
+Using geometric area for 10.3m
+10.8m: 188.03 sq units
+Using geometric area for 17.573: 182.68 sq units
+Using geometric area for Proposed
+FFL +17.500: 180.24 sq units
+Using geometric area for 17.00: 175.60 sq units
+Using geometric area for 6: 171.44 sq units
+Using geometric area for 17.148: 169.12 sq units
+Using geometric area for 17.503: 168.75 sq units
+Using geometric area for 17.397: 162.57 sq units
+Using geometric area for 16.893: 160.46 sq units
+Using geometric area for 16.697: 149.86 sq units
+Using geometric area for SHED: 149.76 sq units
+Using geometric area for 16.971: 147.56 sq units
+Using geometric area for 17.425: 140.83 sq units
+Using geometric area for 17.098: 130.00 sq units
+Using geometric area for fm/h: 125.45 sq units
+Using geometric area for 17.50: 116.61 sq units
+Using geometric area for 17.287: 113.26 sq units
+Using geometric area for 17.852: 107.17 sq units
+Using geometric room areas for 82 rooms
+Using geometric area for mceldowneycolm@gmail.com | +353 (0)85 8370771 | architect, mriai
+colm mceldowney | E. | T.: 11900.00 sq units
+Using geometric area for Drawing Title | Elevations: 9405.00 sq units
+Using geometric area for Project | Dwelling House at 43 Orchard Grove,
+Ballyraine, Letterkenny, Co. Donegal
+for Eamonn & Claire McEldowney: 6862.55 sq units
+Using geometric area for 9510: 896.00 sq units
+Using geometric area for Scale | 1:100 @ A3
+Jan. 2025: 1900.00 sq units
+Using geometric area for Drawing No. | PL004
+CM: 1805.00 sq units
+Using geometric area for Date: 1400.00 sq units
+Using geometric area for Drawn By: 438.41 sq units
+Using geometric area for 3225: 576.00 sq units
+Using geometric area for RECEIVED: 31/01/2025: 425.70 sq units
+Using geometric area for St. | LIVING: 32994.00 sq units
+Using geometric area for BEDROOM 3 | LANDING | FF FFL
++20.560: 30723.50 sq units
+Using geometric area for Walk-in: 16650.00 sq units
+Using geometric area for 11080: 9371.56 sq units
+Using geometric area for Drawing Title | Ground Floor & First Floor: 9350.00 sq units
+Using geometric area for 4015: 8067.05 sq units
+Using geometric area for 4015 | planter: 8010.86 sq units
+Using geometric area for 8600: 4258.00 sq units
+Using geometric area for 3.0m x 4.5m
+proprietary
+metal garden
+shed on conc.
+slab: 3402.00 sq units
+Using geometric area for concrete path: 798.00 sq units
+Using geometric area for Scale | 1:100 / 1:200 @ A3
+Jan. 2025: 1900.00 sq units
+Using geometric area for 10500
+1650: 1795.62 sq units
+Using geometric area for Drawing No. | PL003
+CM: 1710.00 sq units
+Using geometric area for BEDROOM 2: 1425.00 sq units
+Using geometric area for MASTER: 1383.00 sq units
+Using geometric area for 1900: 1378.00 sq units
+Using geometric area for BATHROOM
+E/S: 1145.00 sq units
+Using geometric area for KITCHEN: 1002.43 sq units
+Using geometric area for Flat Roof: 608.25 sq units
+Using geometric area for St.: 459.00 sq units
+Using geometric area for 11080
+2500: 324.00 sq units
+Using geometric area for A: 258.50 sq units
+Using geometric area for 2500: 234.00 sq units
+Using geometric area for HALL
+SITTING: 215.00 sq units
+Using geometric area for Drawing Title: 6979.96 sq units
+Using geometric area for 17.778 | 17.681 | 17.735
+17.829 | fm/h: 6180.59 sq units
+Using geometric area for 2 Storey
+FFL = 15.89 | 4: 5893.08 sq units
+Using geometric area for mceldowneycolm@gmail.com | +353 (0)85 8370771 | E. | T.: 4573.69 sq units
+Using geometric area for 17.305 | Driveway | sm/h
+sm/h: 4229.05 sq units
+Using geometric area for Connection to existing public mains water >>: 2907.83 sq units
+Using geometric area for 17.340: 2400.98 sq units
+Using geometric area for 17.773 | 17.875: 2302.79 sq units
+Using geometric area for Garden: 1499.88 sq units
+Using geometric area for 17.614 | FH: 1376.23 sq units
+Using geometric area for 17.066: 1231.31 sq units
+Using geometric area for 17.817: 1115.74 sq units
+Using geometric area for sm/h: 139.81 sq units
+Using geometric area for overhead wire: 576.84 sq units
+Using geometric area for Patio: 537.70 sq units
+Using geometric area for WM | LP: 527.20 sq units
+Using geometric area for RS: 520.07 sq units
+Using geometric area for 17.411: 501.10 sq units
+Using geometric area for 2 Storey
+FFL = 19.38
+RL = 26.84
+2 Storey
+FFL = 19.38
+RL
+26 84: 490.18 sq units
+Using geometric area for 17.327: 435.16 sq units
+Using geometric area for DWELLING
+RIDGE 24.905
+EAVES 21.958
+FFL 16.765: 381.59 sq units
+Using geometric area for 5: 372.49 sq units
+Using geometric area for 17.125: 358.96 sq units
+Using geometric area for 17.576: 339.52 sq units
+Using geometric area for 44: 310.33 sq units
+Using geometric area for 17.706 | 17.768
+17.879: 309.50 sq units
+Using geometric area for 17.370: 273.74 sq units
+Using geometric area for 16.984: 230.58 sq units
+Using geometric area for 16.905: 217.88 sq units
+Using geometric area for 18.047: 196.84 sq units
+Using geometric area for 10.3m
+10.8m: 188.03 sq units
+Using geometric area for 17.573: 182.68 sq units
+Using geometric area for Proposed
+FFL +17.500: 180.24 sq units
+Using geometric area for 17.00: 175.60 sq units
+Using geometric area for 6: 171.44 sq units
+Using geometric area for 17.148: 169.12 sq units
+Using geometric area for 17.503: 168.75 sq units
+Using geometric area for 17.397: 162.57 sq units
+Using geometric area for 16.893: 160.46 sq units
+Using geometric area for 16.697: 149.86 sq units
+Using geometric area for SHED: 149.76 sq units
+Using geometric area for 16.971: 147.56 sq units
+Using geometric area for 17.425: 140.83 sq units
+Using geometric area for 17.098: 130.00 sq units
+Using geometric area for fm/h: 125.45 sq units
+Using geometric area for 17.50: 116.61 sq units
+Using geometric area for 17.287: 113.26 sq units
+Using geometric area for 17.852: 107.17 sq units
+Using geometric room areas for 82 rooms
+Using geometric area for mceldowneycolm@gmail.com | +353 (0)85 8370771 | architect, mriai
+colm mceldowney | E. | T.: 11900.00 sq units
+Using geometric area for Drawing Title | Elevations: 9405.00 sq units
+Using geometric area for Project | Dwelling House at 43 Orchard Grove,
+Ballyraine, Letterkenny, Co. Donegal
+for Eamonn & Claire McEldowney: 6862.55 sq units
+Using geometric area for 9510: 896.00 sq units
+Using geometric area for Scale | 1:100 @ A3
+Jan. 2025: 1900.00 sq units
+Using geometric area for Drawing No. | PL004
+CM: 1805.00 sq units
+Using geometric area for Date: 1400.00 sq units
+Using geometric area for Drawn By: 438.41 sq units
+Using geometric area for 3225: 576.00 sq units
+Using geometric area for RECEIVED: 31/01/2025: 425.70 sq units
+Using geometric area for St. | LIVING: 32994.00 sq units
+Using geometric area for BEDROOM 3 | LANDING | FF FFL
++20.560: 30723.50 sq units
+Using geometric area for Walk-in: 16650.00 sq units
+Using geometric area for 11080: 9371.56 sq units
+Using geometric area for Drawing Title | Ground Floor & First Floor: 9350.00 sq units
+Using geometric area for 4015: 8067.05 sq units
+Using geometric area for 4015 | planter: 8010.86 sq units
+Using geometric area for 8600: 4258.00 sq units
+Using geometric area for 3.0m x 4.5m
+proprietary
+metal garden
+shed on conc.
+slab: 3402.00 sq units
+Using geometric area for concrete path: 798.00 sq units
+Using geometric area for Scale | 1:100 / 1:200 @ A3
+Jan. 2025: 1900.00 sq units
+Using geometric area for 10500
+1650: 1795.62 sq units
+Using geometric area for Drawing No. | PL003
+CM: 1710.00 sq units
+Using geometric area for BEDROOM 2: 1425.00 sq units
+Using geometric area for MASTER: 1383.00 sq units
+Using geometric area for 1900: 1378.00 sq units
+Using geometric area for BATHROOM
+E/S: 1145.00 sq units
+Using geometric area for KITCHEN: 1002.43 sq units
+Using geometric area for Flat Roof: 608.25 sq units
+Using geometric area for St.: 459.00 sq units
+Using geometric area for 11080
+2500: 324.00 sq units
+Using geometric area for A: 258.50 sq units
+Using geometric area for 2500: 234.00 sq units
+Using geometric area for HALL
+SITTING: 215.00 sq units
+Using geometric area for Drawing Title: 6979.96 sq units
+Using geometric area for 17.778 | 17.681 | 17.735
+17.829 | fm/h: 6180.59 sq units
+Using geometric area for 2 Storey
+FFL = 15.89 | 4: 5893.08 sq units
+Using geometric area for mceldowneycolm@gmail.com | +353 (0)85 8370771 | E. | T.: 4573.69 sq units
+Using geometric area for 17.305 | Driveway | sm/h
+sm/h: 4229.05 sq units
+Using geometric area for Connection to existing public mains water >>: 2907.83 sq units
+Using geometric area for 17.340: 2400.98 sq units
+Using geometric area for 17.773 | 17.875: 2302.79 sq units
+Using geometric area for Garden: 1499.88 sq units
+Using geometric area for 17.614 | FH: 1376.23 sq units
+Using geometric area for 17.066: 1231.31 sq units
+Using geometric area for 17.817: 1115.74 sq units
+Using geometric area for sm/h: 139.81 sq units
+Using geometric area for overhead wire: 576.84 sq units
+Using geometric area for Patio: 537.70 sq units
+Using geometric area for WM | LP: 527.20 sq units
+Using geometric area for RS: 520.07 sq units
+Using geometric area for 17.411: 501.10 sq units
+Using geometric area for 2 Storey
+FFL = 19.38
+RL = 26.84
+2 Storey
+FFL = 19.38
+RL
+26 84: 490.18 sq units
+Using geometric area for 17.327: 435.16 sq units
+Using geometric area for DWELLING
+RIDGE 24.905
+EAVES 21.958
+FFL 16.765: 381.59 sq units
+Using geometric area for 5: 372.49 sq units
+Using geometric area for 17.125: 358.96 sq units
+Using geometric area for 17.576: 339.52 sq units
+Using geometric area for 44: 310.33 sq units
+Using geometric area for 17.706 | 17.768
+17.879: 309.50 sq units
+Using geometric area for 17.370: 273.74 sq units
+Using geometric area for 16.984: 230.58 sq units
+Using geometric area for 16.905: 217.88 sq units
+Using geometric area for 18.047: 196.84 sq units
+Using geometric area for 10.3m
+10.8m: 188.03 sq units
+Using geometric area for 17.573: 182.68 sq units
+Using geometric area for Proposed
+FFL +17.500: 180.24 sq units
+Using geometric area for 17.00: 175.60 sq units
+Using geometric area for 6: 171.44 sq units
+Using geometric area for 17.148: 169.12 sq units
+Using geometric area for 17.503: 168.75 sq units
+Using geometric area for 17.397: 162.57 sq units
+Using geometric area for 16.893: 160.46 sq units
+Using geometric area for 16.697: 149.86 sq units
+Using geometric area for SHED: 149.76 sq units
+Using geometric area for 16.971: 147.56 sq units
+Using geometric area for 17.425: 140.83 sq units
+Using geometric area for 17.098: 130.00 sq units
+Using geometric area for fm/h: 125.45 sq units
+Using geometric area for 17.50: 116.61 sq units
+Using geometric area for 17.287: 113.26 sq units
+Using geometric area for 17.852: 107.17 sq units
+Using geometric room areas for 82 rooms
+Using geometric area for mceldowneycolm@gmail.com | +353 (0)85 8370771 | architect, mriai
+colm mceldowney | E. | T.: 11900.00 sq units
+Using geometric area for Drawing Title | Elevations: 9405.00 sq units
+Using geometric area for Project | Dwelling House at 43 Orchard Grove,
+Ballyraine, Letterkenny, Co. Donegal
+for Eamonn & Claire McEldowney: 6862.55 sq units
+Using geometric area for 9510: 896.00 sq units
+Using geometric area for Scale | 1:100 @ A3
+Jan. 2025: 1900.00 sq units
+Using geometric area for Drawing No. | PL004
+CM: 1805.00 sq units
+Using geometric area for Date: 1400.00 sq units
+Using geometric area for Drawn By: 438.41 sq units
+Using geometric area for 3225: 576.00 sq units
+Using geometric area for RECEIVED: 31/01/2025: 425.70 sq units
+Using geometric area for St. | LIVING: 32994.00 sq units
+Using geometric area for BEDROOM 3 | LANDING | FF FFL
++20.560: 30723.50 sq units
+Using geometric area for Walk-in: 16650.00 sq units
+Using geometric area for 11080: 9371.56 sq units
+Using geometric area for Drawing Title | Ground Floor & First Floor: 9350.00 sq units
+Using geometric area for 4015: 8067.05 sq units
+Using geometric area for 4015 | planter: 8010.86 sq units
+Using geometric area for 8600: 4258.00 sq units
+Using geometric area for 3.0m x 4.5m
+proprietary
+metal garden
+shed on conc.
+slab: 3402.00 sq units
+Using geometric area for concrete path: 798.00 sq units
+Using geometric area for Scale | 1:100 / 1:200 @ A3
+Jan. 2025: 1900.00 sq units
+Using geometric area for 10500
+1650: 1795.62 sq units
+Using geometric area for Drawing No. | PL003
+CM: 1710.00 sq units
+Using geometric area for BEDROOM 2: 1425.00 sq units
+Using geometric area for MASTER: 1383.00 sq units
+Using geometric area for 1900: 1378.00 sq units
+Using geometric area for BATHROOM
+E/S: 1145.00 sq units
+Using geometric area for KITCHEN: 1002.43 sq units
+Using geometric area for Flat Roof: 608.25 sq units
+Using geometric area for St.: 459.00 sq units
+Using geometric area for 11080
+2500: 324.00 sq units
+Using geometric area for A: 258.50 sq units
+Using geometric area for 2500: 234.00 sq units
+Using geometric area for HALL
+SITTING: 215.00 sq units
+Using geometric area for Drawing Title: 6979.96 sq units
+Using geometric area for 17.778 | 17.681 | 17.735
+17.829 | fm/h: 6180.59 sq units
+Using geometric area for 2 Storey
+FFL = 15.89 | 4: 5893.08 sq units
+Using geometric area for mceldowneycolm@gmail.com | +353 (0)85 8370771 | E. | T.: 4573.69 sq units
+Using geometric area for 17.305 | Driveway | sm/h
+sm/h: 4229.05 sq units
+Using geometric area for Connection to existing public mains water >>: 2907.83 sq units
+Using geometric area for 17.340: 2400.98 sq units
+Using geometric area for 17.773 | 17.875: 2302.79 sq units
+Using geometric area for Garden: 1499.88 sq units
+Using geometric area for 17.614 | FH: 1376.23 sq units
+Using geometric area for 17.066: 1231.31 sq units
+Using geometric area for 17.817: 1115.74 sq units
+Using geometric area for sm/h: 139.81 sq units
+Using geometric area for overhead wire: 576.84 sq units
+Using geometric area for Patio: 537.70 sq units
+Using geometric area for WM | LP: 527.20 sq units
+Using geometric area for RS: 520.07 sq units
+Using geometric area for 17.411: 501.10 sq units
+Using geometric area for 2 Storey
+FFL = 19.38
+RL = 26.84
+2 Storey
+FFL = 19.38
+RL
+26 84: 490.18 sq units
+Using geometric area for 17.327: 435.16 sq units
+Using geometric area for DWELLING
+RIDGE 24.905
+EAVES 21.958
+FFL 16.765: 381.59 sq units
+Using geometric area for 5: 372.49 sq units
+Using geometric area for 17.125: 358.96 sq units
+Using geometric area for 17.576: 339.52 sq units
+Using geometric area for 44: 310.33 sq units
+Using geometric area for 17.706 | 17.768
+17.879: 309.50 sq units
+Using geometric area for 17.370: 273.74 sq units
+Using geometric area for 16.984: 230.58 sq units
+Using geometric area for 16.905: 217.88 sq units
+Using geometric area for 18.047: 196.84 sq units
+Using geometric area for 10.3m
+10.8m: 188.03 sq units
+Using geometric area for 17.573: 182.68 sq units
+Using geometric area for Proposed
+FFL +17.500: 180.24 sq units
+Using geometric area for 17.00: 175.60 sq units
+Using geometric area for 6: 171.44 sq units
+Using geometric area for 17.148: 169.12 sq units
+Using geometric area for 17.503: 168.75 sq units
+Using geometric area for 17.397: 162.57 sq units
+Using geometric area for 16.893: 160.46 sq units
+Using geometric area for 16.697: 149.86 sq units
+Using geometric area for SHED: 149.76 sq units
+Using geometric area for 16.971: 147.56 sq units
+Using geometric area for 17.425: 140.83 sq units
+Using geometric area for 17.098: 130.00 sq units
+Using geometric area for fm/h: 125.45 sq units
+Using geometric area for 17.50: 116.61 sq units
+Using geometric area for 17.287: 113.26 sq units
+Using geometric area for 17.852: 107.17 sq units
+Using geometric room areas for 82 rooms
+Using geometric area for mceldowneycolm@gmail.com | +353 (0)85 8370771 | architect, mriai
+colm mceldowney | E. | T.: 11900.00 sq units
+Using geometric area for Drawing Title | Elevations: 9405.00 sq units
+Using geometric area for Project | Dwelling House at 43 Orchard Grove,
+Ballyraine, Letterkenny, Co. Donegal
+for Eamonn & Claire McEldowney: 6862.55 sq units
+Using geometric area for 9510: 896.00 sq units
+Using geometric area for Scale | 1:100 @ A3
+Jan. 2025: 1900.00 sq units
+Using geometric area for Drawing No. | PL004
+CM: 1805.00 sq units
+Using geometric area for Date: 1400.00 sq units
+Using geometric area for Drawn By: 438.41 sq units
+Using geometric area for 3225: 576.00 sq units
+Using geometric area for RECEIVED: 31/01/2025: 425.70 sq units
+Using geometric area for St. | LIVING: 32994.00 sq units
+Using geometric area for BEDROOM 3 | LANDING | FF FFL
++20.560: 30723.50 sq units
+Using geometric area for Walk-in: 16650.00 sq units
+Using geometric area for 11080: 9371.56 sq units
+Using geometric area for Drawing Title | Ground Floor & First Floor: 9350.00 sq units
+Using geometric area for 4015: 8067.05 sq units
+Using geometric area for 4015 | planter: 8010.86 sq units
+Using geometric area for 8600: 4258.00 sq units
+Using geometric area for 3.0m x 4.5m
+proprietary
+metal garden
+shed on conc.
+slab: 3402.00 sq units
+Using geometric area for concrete path: 798.00 sq units
+Using geometric area for Scale | 1:100 / 1:200 @ A3
+Jan. 2025: 1900.00 sq units
+Using geometric area for 10500
+1650: 1795.62 sq units
+Using geometric area for Drawing No. | PL003
+CM: 1710.00 sq units
+Using geometric area for BEDROOM 2: 1425.00 sq units
+Using geometric area for MASTER: 1383.00 sq units
+Using geometric area for 1900: 1378.00 sq units
+Using geometric area for BATHROOM
+E/S: 1145.00 sq units
+Using geometric area for KITCHEN: 1002.43 sq units
+Using geometric area for Flat Roof: 608.25 sq units
+Using geometric area for St.: 459.00 sq units
+Using geometric area for 11080
+2500: 324.00 sq units
+Using geometric area for A: 258.50 sq units
+Using geometric area for 2500: 234.00 sq units
+Using geometric area for HALL
+SITTING: 215.00 sq units
+Using geometric area for Drawing Title: 6979.96 sq units
+Using geometric area for 17.778 | 17.681 | 17.735
+17.829 | fm/h: 6180.59 sq units
+Using geometric area for 2 Storey
+FFL = 15.89 | 4: 5893.08 sq units
+Using geometric area for mceldowneycolm@gmail.com | +353 (0)85 8370771 | E. | T.: 4573.69 sq units
+Using geometric area for 17.305 | Driveway | sm/h
+sm/h: 4229.05 sq units
+Using geometric area for Connection to existing public mains water >>: 2907.83 sq units
+Using geometric area for 17.340: 2400.98 sq units
+Using geometric area for 17.773 | 17.875: 2302.79 sq units
+Using geometric area for Garden: 1499.88 sq units
+Using geometric area for 17.614 | FH: 1376.23 sq units
+Using geometric area for 17.066: 1231.31 sq units
+Using geometric area for 17.817: 1115.74 sq units
+Using geometric area for sm/h: 139.81 sq units
+Using geometric area for overhead wire: 576.84 sq units
+Using geometric area for Patio: 537.70 sq units
+Using geometric area for WM | LP: 527.20 sq units
+Using geometric area for RS: 520.07 sq units
+Using geometric area for 17.411: 501.10 sq units
+Using geometric area for 2 Storey
+FFL = 19.38
+RL = 26.84
+2 Storey
+FFL = 19.38
+RL
+26 84: 490.18 sq units
+Using geometric area for 17.327: 435.16 sq units
+Using geometric area for DWELLING
+RIDGE 24.905
+EAVES 21.958
+FFL 16.765: 381.59 sq units
+Using geometric area for 5: 372.49 sq units
+Using geometric area for 17.125: 358.96 sq units
+Using geometric area for 17.576: 339.52 sq units
+Using geometric area for 44: 310.33 sq units
+Using geometric area for 17.706 | 17.768
+17.879: 309.50 sq units
+Using geometric area for 17.370: 273.74 sq units
+Using geometric area for 16.984: 230.58 sq units
+Using geometric area for 16.905: 217.88 sq units
+Using geometric area for 18.047: 196.84 sq units
+Using geometric area for 10.3m
+10.8m: 188.03 sq units
+Using geometric area for 17.573: 182.68 sq units
+Using geometric area for Proposed
+FFL +17.500: 180.24 sq units
+Using geometric area for 17.00: 175.60 sq units
+Using geometric area for 6: 171.44 sq units
+Using geometric area for 17.148: 169.12 sq units
+Using geometric area for 17.503: 168.75 sq units
+Using geometric area for 17.397: 162.57 sq units
+Using geometric area for 16.893: 160.46 sq units
+Using geometric area for 16.697: 149.86 sq units
+Using geometric area for SHED: 149.76 sq units
+Using geometric area for 16.971: 147.56 sq units
+Using geometric area for 17.425: 140.83 sq units
+Using geometric area for 17.098: 130.00 sq units
+Using geometric area for fm/h: 125.45 sq units
+Using geometric area for 17.50: 116.61 sq units
+Using geometric area for 17.287: 113.26 sq units
+Using geometric area for 17.852: 107.17 sq units
+Using geometric room areas for 82 rooms
+Using geometric area for mceldowneycolm@gmail.com | +353 (0)85 8370771 | architect, mriai
+colm mceldowney | E. | T.: 11900.00 sq units
+Using geometric area for Drawing Title | Elevations: 9405.00 sq units
+Using geometric area for Project | Dwelling House at 43 Orchard Grove,
+Ballyraine, Letterkenny, Co. Donegal
+for Eamonn & Claire McEldowney: 6862.55 sq units
+Using geometric area for 9510: 896.00 sq units
+Using geometric area for Scale | 1:100 @ A3
+Jan. 2025: 1900.00 sq units
+Using geometric area for Drawing No. | PL004
+CM: 1805.00 sq units
+Using geometric area for Date: 1400.00 sq units
+Using geometric area for Drawn By: 438.41 sq units
+Using geometric area for 3225: 576.00 sq units
+Using geometric area for RECEIVED: 31/01/2025: 425.70 sq units
+Using geometric area for St. | LIVING: 32994.00 sq units
+Using geometric area for BEDROOM 3 | LANDING | FF FFL
++20.560: 30723.50 sq units
+Using geometric area for Walk-in: 16650.00 sq units
+Using geometric area for 11080: 9371.56 sq units
+Using geometric area for Drawing Title | Ground Floor & First Floor: 9350.00 sq units
+Using geometric area for 4015: 8067.05 sq units
+Using geometric area for 4015 | planter: 8010.86 sq units
+Using geometric area for 8600: 4258.00 sq units
+Using geometric area for 3.0m x 4.5m
+proprietary
+metal garden
+shed on conc.
+slab: 3402.00 sq units
+Using geometric area for concrete path: 798.00 sq units
+Using geometric area for Scale | 1:100 / 1:200 @ A3
+Jan. 2025: 1900.00 sq units
+Using geometric area for 10500
+1650: 1795.62 sq units
+Using geometric area for Drawing No. | PL003
+CM: 1710.00 sq units
+Using geometric area for BEDROOM 2: 1425.00 sq units
+Using geometric area for MASTER: 1383.00 sq units
+Using geometric area for 1900: 1378.00 sq units
+Using geometric area for BATHROOM
+E/S: 1145.00 sq units
+Using geometric area for KITCHEN: 1002.43 sq units
+Using geometric area for Flat Roof: 608.25 sq units
+Using geometric area for St.: 459.00 sq units
+Using geometric area for 11080
+2500: 324.00 sq units
+Using geometric area for A: 258.50 sq units
+Using geometric area for 2500: 234.00 sq units
+Using geometric area for HALL
+SITTING: 215.00 sq units
+Using geometric area for Drawing Title: 6979.96 sq units
+Using geometric area for 17.778 | 17.681 | 17.735
+17.829 | fm/h: 6180.59 sq units
+Using geometric area for 2 Storey
+FFL = 15.89 | 4: 5893.08 sq units
+Using geometric area for mceldowneycolm@gmail.com | +353 (0)85 8370771 | E. | T.: 4573.69 sq units
+Using geometric area for 17.305 | Driveway | sm/h
+sm/h: 4229.05 sq units
+Using geometric area for Connection to existing public mains water >>: 2907.83 sq units
+Using geometric area for 17.340: 2400.98 sq units
+Using geometric area for 17.773 | 17.875: 2302.79 sq units
+Using geometric area for Garden: 1499.88 sq units
+Using geometric area for 17.614 | FH: 1376.23 sq units
+Using geometric area for 17.066: 1231.31 sq units
+Using geometric area for 17.817: 1115.74 sq units
+Using geometric area for sm/h: 139.81 sq units
+Using geometric area for overhead wire: 576.84 sq units
+Using geometric area for Patio: 537.70 sq units
+Using geometric area for WM | LP: 527.20 sq units
+Using geometric area for RS: 520.07 sq units
+Using geometric area for 17.411: 501.10 sq units
+Using geometric area for 2 Storey
+FFL = 19.38
+RL = 26.84
+2 Storey
+FFL = 19.38
+RL
+26 84: 490.18 sq units
+Using geometric area for 17.327: 435.16 sq units
+Using geometric area for DWELLING
+RIDGE 24.905
+EAVES 21.958
+FFL 16.765: 381.59 sq units
+Using geometric area for 5: 372.49 sq units
+Using geometric area for 17.125: 358.96 sq units
+Using geometric area for 17.576: 339.52 sq units
+Using geometric area for 44: 310.33 sq units
+Using geometric area for 17.706 | 17.768
+17.879: 309.50 sq units
+Using geometric area for 17.370: 273.74 sq units
+Using geometric area for 16.984: 230.58 sq units
+Using geometric area for 16.905: 217.88 sq units
+Using geometric area for 18.047: 196.84 sq units
+Using geometric area for 10.3m
+10.8m: 188.03 sq units
+Using geometric area for 17.573: 182.68 sq units
+Using geometric area for Proposed
+FFL +17.500: 180.24 sq units
+Using geometric area for 17.00: 175.60 sq units
+Using geometric area for 6: 171.44 sq units
+Using geometric area for 17.148: 169.12 sq units
+Using geometric area for 17.503: 168.75 sq units
+Using geometric area for 17.397: 162.57 sq units
+Using geometric area for 16.893: 160.46 sq units
+Using geometric area for 16.697: 149.86 sq units
+Using geometric area for SHED: 149.76 sq units
+Using geometric area for 16.971: 147.56 sq units
+Using geometric area for 17.425: 140.83 sq units
+Using geometric area for 17.098: 130.00 sq units
+Using geometric area for fm/h: 125.45 sq units
+Using geometric area for 17.50: 116.61 sq units
+Using geometric area for 17.287: 113.26 sq units
+Using geometric area for 17.852: 107.17 sq units
+Using geometric room areas for 82 rooms
+Using geometric area for mceldowneycolm@gmail.com | +353 (0)85 8370771 | architect, mriai
+colm mceldowney | E. | T.: 11900.00 sq units
+Using geometric area for Drawing Title | Elevations: 9405.00 sq units
+Using geometric area for Project | Dwelling House at 43 Orchard Grove,
+Ballyraine, Letterkenny, Co. Donegal
+for Eamonn & Claire McEldowney: 6862.55 sq units
+Using geometric area for 9510: 896.00 sq units
+Using geometric area for Scale | 1:100 @ A3
+Jan. 2025: 1900.00 sq units
+Using geometric area for Drawing No. | PL004
+CM: 1805.00 sq units
+Using geometric area for Date: 1400.00 sq units
+Using geometric area for Drawn By: 438.41 sq units
+Using geometric area for 3225: 576.00 sq units
+Using geometric area for RECEIVED: 31/01/2025: 425.70 sq units
+Using geometric area for St. | LIVING: 32994.00 sq units
+Using geometric area for BEDROOM 3 | LANDING | FF FFL
++20.560: 30723.50 sq units
+Using geometric area for Walk-in: 16650.00 sq units
+Using geometric area for 11080: 9371.56 sq units
+Using geometric area for Drawing Title | Ground Floor & First Floor: 9350.00 sq units
+Using geometric area for 4015: 8067.05 sq units
+Using geometric area for 4015 | planter: 8010.86 sq units
+Using geometric area for 8600: 4258.00 sq units
+Using geometric area for 3.0m x 4.5m
+proprietary
+metal garden
+shed on conc.
+slab: 3402.00 sq units
+Using geometric area for concrete path: 798.00 sq units
+Using geometric area for Scale | 1:100 / 1:200 @ A3
+Jan. 2025: 1900.00 sq units
+Using geometric area for 10500
+1650: 1795.62 sq units
+Using geometric area for Drawing No. | PL003
+CM: 1710.00 sq units
+Using geometric area for BEDROOM 2: 1425.00 sq units
+Using geometric area for MASTER: 1383.00 sq units
+Using geometric area for 1900: 1378.00 sq units
+Using geometric area for BATHROOM
+E/S: 1145.00 sq units
+Using geometric area for KITCHEN: 1002.43 sq units
+Using geometric area for Flat Roof: 608.25 sq units
+Using geometric area for St.: 459.00 sq units
+Using geometric area for 11080
+2500: 324.00 sq units
+Using geometric area for A: 258.50 sq units
+Using geometric area for 2500: 234.00 sq units
+Using geometric area for HALL
+SITTING: 215.00 sq units
+Using geometric area for Drawing Title: 6979.96 sq units
+Using geometric area for 17.778 | 17.681 | 17.735
+17.829 | fm/h: 6180.59 sq units
+Using geometric area for 2 Storey
+FFL = 15.89 | 4: 5893.08 sq units
+Using geometric area for mceldowneycolm@gmail.com | +353 (0)85 8370771 | E. | T.: 4573.69 sq units
+Using geometric area for 17.305 | Driveway | sm/h
+sm/h: 4229.05 sq units
+Using geometric area for Connection to existing public mains water >>: 2907.83 sq units
+Using geometric area for 17.340: 2400.98 sq units
+Using geometric area for 17.773 | 17.875: 2302.79 sq units
+Using geometric area for Garden: 1499.88 sq units
+Using geometric area for 17.614 | FH: 1376.23 sq units
+Using geometric area for 17.066: 1231.31 sq units
+Using geometric area for 17.817: 1115.74 sq units
+Using geometric area for sm/h: 139.81 sq units
+Using geometric area for overhead wire: 576.84 sq units
+Using geometric area for Patio: 537.70 sq units
+Using geometric area for WM | LP: 527.20 sq units
+Using geometric area for RS: 520.07 sq units
+Using geometric area for 17.411: 501.10 sq units
+Using geometric area for 2 Storey
+FFL = 19.38
+RL = 26.84
+2 Storey
+FFL = 19.38
+RL
+26 84: 490.18 sq units
+Using geometric area for 17.327: 435.16 sq units
+Using geometric area for DWELLING
+RIDGE 24.905
+EAVES 21.958
+FFL 16.765: 381.59 sq units
+Using geometric area for 5: 372.49 sq units
+Using geometric area for 17.125: 358.96 sq units
+Using geometric area for 17.576: 339.52 sq units
+Using geometric area for 44: 310.33 sq units
+Using geometric area for 17.706 | 17.768
+17.879: 309.50 sq units
+Using geometric area for 17.370: 273.74 sq units
+Using geometric area for 16.984: 230.58 sq units
+Using geometric area for 16.905: 217.88 sq units
+Using geometric area for 18.047: 196.84 sq units
+Using geometric area for 10.3m
+10.8m: 188.03 sq units
+Using geometric area for 17.573: 182.68 sq units
+Using geometric area for Proposed
+FFL +17.500: 180.24 sq units
+Using geometric area for 17.00: 175.60 sq units
+Using geometric area for 6: 171.44 sq units
+Using geometric area for 17.148: 169.12 sq units
+Using geometric area for 17.503: 168.75 sq units
+Using geometric area for 17.397: 162.57 sq units
+Using geometric area for 16.893: 160.46 sq units
+Using geometric area for 16.697: 149.86 sq units
+Using geometric area for SHED: 149.76 sq units
+Using geometric area for 16.971: 147.56 sq units
+Using geometric area for 17.425: 140.83 sq units
+Using geometric area for 17.098: 130.00 sq units
+Using geometric area for fm/h: 125.45 sq units
+Using geometric area for 17.50: 116.61 sq units
+Using geometric area for 17.287: 113.26 sq units
+Using geometric area for 17.852: 107.17 sq units
+Using geometric room areas for 82 rooms
+Using geometric area for mceldowneycolm@gmail.com | +353 (0)85 8370771 | architect, mriai
+colm mceldowney | E. | T.: 11900.00 sq units
+Using geometric area for Drawing Title | Elevations: 9405.00 sq units
+Using geometric area for Project | Dwelling House at 43 Orchard Grove,
+Ballyraine, Letterkenny, Co. Donegal
+for Eamonn & Claire McEldowney: 6862.55 sq units
+Using geometric area for 9510: 896.00 sq units
+Using geometric area for Scale | 1:100 @ A3
+Jan. 2025: 1900.00 sq units
+Using geometric area for Drawing No. | PL004
+CM: 1805.00 sq units
+Using geometric area for Date: 1400.00 sq units
+Using geometric area for Drawn By: 438.41 sq units
+Using geometric area for 3225: 576.00 sq units
+Using geometric area for RECEIVED: 31/01/2025: 425.70 sq units
+Using geometric area for St. | LIVING: 32994.00 sq units
+Using geometric area for BEDROOM 3 | LANDING | FF FFL
++20.560: 30723.50 sq units
+Using geometric area for Walk-in: 16650.00 sq units
+Using geometric area for 11080: 9371.56 sq units
+Using geometric area for Drawing Title | Ground Floor & First Floor: 9350.00 sq units
+Using geometric area for 4015: 8067.05 sq units
+Using geometric area for 4015 | planter: 8010.86 sq units
+Using geometric area for 8600: 4258.00 sq units
+Using geometric area for 3.0m x 4.5m
+proprietary
+metal garden
+shed on conc.
+slab: 3402.00 sq units
+Using geometric area for concrete path: 798.00 sq units
+Using geometric area for Scale | 1:100 / 1:200 @ A3
+Jan. 2025: 1900.00 sq units
+Using geometric area for 10500
+1650: 1795.62 sq units
+Using geometric area for Drawing No. | PL003
+CM: 1710.00 sq units
+Using geometric area for BEDROOM 2: 1425.00 sq units
+Using geometric area for MASTER: 1383.00 sq units
+Using geometric area for 1900: 1378.00 sq units
+Using geometric area for BATHROOM
+E/S: 1145.00 sq units
+Using geometric area for KITCHEN: 1002.43 sq units
+Using geometric area for Flat Roof: 608.25 sq units
+Using geometric area for St.: 459.00 sq units
+Using geometric area for 11080
+2500: 324.00 sq units
+Using geometric area for A: 258.50 sq units
+Using geometric area for 2500: 234.00 sq units
+Using geometric area for HALL
+SITTING: 215.00 sq units
+Using geometric area for Drawing Title: 6979.96 sq units
+Using geometric area for 17.778 | 17.681 | 17.735
+17.829 | fm/h: 6180.59 sq units
+Using geometric area for 2 Storey
+FFL = 15.89 | 4: 5893.08 sq units
+Using geometric area for mceldowneycolm@gmail.com | +353 (0)85 8370771 | E. | T.: 4573.69 sq units
+Using geometric area for 17.305 | Driveway | sm/h
+sm/h: 4229.05 sq units
+Using geometric area for Connection to existing public mains water >>: 2907.83 sq units
+Using geometric area for 17.340: 2400.98 sq units
+Using geometric area for 17.773 | 17.875: 2302.79 sq units
+Using geometric area for Garden: 1499.88 sq units
+Using geometric area for 17.614 | FH: 1376.23 sq units
+Using geometric area for 17.066: 1231.31 sq units
+Using geometric area for 17.817: 1115.74 sq units
+Using geometric area for sm/h: 139.81 sq units
+Using geometric area for overhead wire: 576.84 sq units
+Using geometric area for Patio: 537.70 sq units
+Using geometric area for WM | LP: 527.20 sq units
+Using geometric area for RS: 520.07 sq units
+Using geometric area for 17.411: 501.10 sq units
+Using geometric area for 2 Storey
+FFL = 19.38
+RL = 26.84
+2 Storey
+FFL = 19.38
+RL
+26 84: 490.18 sq units
+Using geometric area for 17.327: 435.16 sq units
+Using geometric area for DWELLING
+RIDGE 24.905
+EAVES 21.958
+FFL 16.765: 381.59 sq units
+Using geometric area for 5: 372.49 sq units
+Using geometric area for 17.125: 358.96 sq units
+Using geometric area for 17.576: 339.52 sq units
+Using geometric area for 44: 310.33 sq units
+Using geometric area for 17.706 | 17.768
+17.879: 309.50 sq units
+Using geometric area for 17.370: 273.74 sq units
+Using geometric area for 16.984: 230.58 sq units
+Using geometric area for 16.905: 217.88 sq units
+Using geometric area for 18.047: 196.84 sq units
+Using geometric area for 10.3m
+10.8m: 188.03 sq units
+Using geometric area for 17.573: 182.68 sq units
+Using geometric area for Proposed
+FFL +17.500: 180.24 sq units
+Using geometric area for 17.00: 175.60 sq units
+Using geometric area for 6: 171.44 sq units
+Using geometric area for 17.148: 169.12 sq units
+Using geometric area for 17.503: 168.75 sq units
+Using geometric area for 17.397: 162.57 sq units
+Using geometric area for 16.893: 160.46 sq units
+Using geometric area for 16.697: 149.86 sq units
+Using geometric area for SHED: 149.76 sq units
+Using geometric area for 16.971: 147.56 sq units
+Using geometric area for 17.425: 140.83 sq units
+Using geometric area for 17.098: 130.00 sq units
+Using geometric area for fm/h: 125.45 sq units
+Using geometric area for 17.50: 116.61 sq units
+Using geometric area for 17.287: 113.26 sq units
+Using geometric area for 17.852: 107.17 sq units
+Using geometric room areas for 82 rooms
+Using geometric area for mceldowneycolm@gmail.com | +353 (0)85 8370771 | architect, mriai
+colm mceldowney | E. | T.: 11900.00 sq units
+Using geometric area for Drawing Title | Elevations: 9405.00 sq units
+Using geometric area for Project | Dwelling House at 43 Orchard Grove,
+Ballyraine, Letterkenny, Co. Donegal
+for Eamonn & Claire McEldowney: 6862.55 sq units
+Using geometric area for 9510: 896.00 sq units
+Using geometric area for Scale | 1:100 @ A3
+Jan. 2025: 1900.00 sq units
+Using geometric area for Drawing No. | PL004
+CM: 1805.00 sq units
+Using geometric area for Date: 1400.00 sq units
+Using geometric area for Drawn By: 438.41 sq units
+Using geometric area for 3225: 576.00 sq units
+Using geometric area for RECEIVED: 31/01/2025: 425.70 sq units
+Using geometric area for St. | LIVING: 32994.00 sq units
+Using geometric area for BEDROOM 3 | LANDING | FF FFL
++20.560: 30723.50 sq units
+Using geometric area for Walk-in: 16650.00 sq units
+Using geometric area for 11080: 9371.56 sq units
+Using geometric area for Drawing Title | Ground Floor & First Floor: 9350.00 sq units
+Using geometric area for 4015: 8067.05 sq units
+Using geometric area for 4015 | planter: 8010.86 sq units
+Using geometric area for 8600: 4258.00 sq units
+Using geometric area for 3.0m x 4.5m
+proprietary
+metal garden
+shed on conc.
+slab: 3402.00 sq units
+Using geometric area for concrete path: 798.00 sq units
+Using geometric area for Scale | 1:100 / 1:200 @ A3
+Jan. 2025: 1900.00 sq units
+Using geometric area for 10500
+1650: 1795.62 sq units
+Using geometric area for Drawing No. | PL003
+CM: 1710.00 sq units
+Using geometric area for BEDROOM 2: 1425.00 sq units
+Using geometric area for MASTER: 1383.00 sq units
+Using geometric area for 1900: 1378.00 sq units
+Using geometric area for BATHROOM
+E/S: 1145.00 sq units
+Using geometric area for KITCHEN: 1002.43 sq units
+Using geometric area for Flat Roof: 608.25 sq units
+Using geometric area for St.: 459.00 sq units
+Using geometric area for 11080
+2500: 324.00 sq units
+Using geometric area for A: 258.50 sq units
+Using geometric area for 2500: 234.00 sq units
+Using geometric area for HALL
+SITTING: 215.00 sq units
+Using geometric area for Drawing Title: 6979.96 sq units
+Using geometric area for 17.778 | 17.681 | 17.735
+17.829 | fm/h: 6180.59 sq units
+Using geometric area for 2 Storey
+FFL = 15.89 | 4: 5893.08 sq units
+Using geometric area for mceldowneycolm@gmail.com | +353 (0)85 8370771 | E. | T.: 4573.69 sq units
+Using geometric area for 17.305 | Driveway | sm/h
+sm/h: 4229.05 sq units
+Using geometric area for Connection to existing public mains water >>: 2907.83 sq units
+Using geometric area for 17.340: 2400.98 sq units
+Using geometric area for 17.773 | 17.875: 2302.79 sq units
+Using geometric area for Garden: 1499.88 sq units
+Using geometric area for 17.614 | FH: 1376.23 sq units
+Using geometric area for 17.066: 1231.31 sq units
+Using geometric area for 17.817: 1115.74 sq units
+Using geometric area for sm/h: 139.81 sq units
+Using geometric area for overhead wire: 576.84 sq units
+Using geometric area for Patio: 537.70 sq units
+Using geometric area for WM | LP: 527.20 sq units
+Using geometric area for RS: 520.07 sq units
+Using geometric area for 17.411: 501.10 sq units
+Using geometric area for 2 Storey
+FFL = 19.38
+RL = 26.84
+2 Storey
+FFL = 19.38
+RL
+26 84: 490.18 sq units
+Using geometric area for 17.327: 435.16 sq units
+Using geometric area for DWELLING
+RIDGE 24.905
+EAVES 21.958
+FFL 16.765: 381.59 sq units
+Using geometric area for 5: 372.49 sq units
+Using geometric area for 17.125: 358.96 sq units
+Using geometric area for 17.576: 339.52 sq units
+Using geometric area for 44: 310.33 sq units
+Using geometric area for 17.706 | 17.768
+17.879: 309.50 sq units
+Using geometric area for 17.370: 273.74 sq units
+Using geometric area for 16.984: 230.58 sq units
+Using geometric area for 16.905: 217.88 sq units
+Using geometric area for 18.047: 196.84 sq units
+Using geometric area for 10.3m
+10.8m: 188.03 sq units
+Using geometric area for 17.573: 182.68 sq units
+Using geometric area for Proposed
+FFL +17.500: 180.24 sq units
+Using geometric area for 17.00: 175.60 sq units
+Using geometric area for 6: 171.44 sq units
+Using geometric area for 17.148: 169.12 sq units
+Using geometric area for 17.503: 168.75 sq units
+Using geometric area for 17.397: 162.57 sq units
+Using geometric area for 16.893: 160.46 sq units
+Using geometric area for 16.697: 149.86 sq units
+Using geometric area for SHED: 149.76 sq units
+Using geometric area for 16.971: 147.56 sq units
+Using geometric area for 17.425: 140.83 sq units
+Using geometric area for 17.098: 130.00 sq units
+Using geometric area for fm/h: 125.45 sq units
+Using geometric area for 17.50: 116.61 sq units
+Using geometric area for 17.287: 113.26 sq units
+Using geometric area for 17.852: 107.17 sq units
+Using geometric room areas for 82 rooms
+Using geometric area for mceldowneycolm@gmail.com | +353 (0)85 8370771 | architect, mriai
+colm mceldowney | E. | T.: 11900.00 sq units
+Using geometric area for Drawing Title | Elevations: 9405.00 sq units
+Using geometric area for Project | Dwelling House at 43 Orchard Grove,
+Ballyraine, Letterkenny, Co. Donegal
+for Eamonn & Claire McEldowney: 6862.55 sq units
+Using geometric area for 9510: 896.00 sq units
+Using geometric area for Scale | 1:100 @ A3
+Jan. 2025: 1900.00 sq units
+Using geometric area for Drawing No. | PL004
+CM: 1805.00 sq units
+Using geometric area for Date: 1400.00 sq units
+Using geometric area for Drawn By: 438.41 sq units
+Using geometric area for 3225: 576.00 sq units
+Using geometric area for RECEIVED: 31/01/2025: 425.70 sq units
+Using geometric area for St. | LIVING: 32994.00 sq units
+Using geometric area for BEDROOM 3 | LANDING | FF FFL
++20.560: 30723.50 sq units
+Using geometric area for Walk-in: 16650.00 sq units
+Using geometric area for 11080: 9371.56 sq units
+Using geometric area for Drawing Title | Ground Floor & First Floor: 9350.00 sq units
+Using geometric area for 4015: 8067.05 sq units
+Using geometric area for 4015 | planter: 8010.86 sq units
+Using geometric area for 8600: 4258.00 sq units
+Using geometric area for 3.0m x 4.5m
+proprietary
+metal garden
+shed on conc.
+slab: 3402.00 sq units
+Using geometric area for concrete path: 798.00 sq units
+Using geometric area for Scale | 1:100 / 1:200 @ A3
+Jan. 2025: 1900.00 sq units
+Using geometric area for 10500
+1650: 1795.62 sq units
+Using geometric area for Drawing No. | PL003
+CM: 1710.00 sq units
+Using geometric area for BEDROOM 2: 1425.00 sq units
+Using geometric area for MASTER: 1383.00 sq units
+Using geometric area for 1900: 1378.00 sq units
+Using geometric area for BATHROOM
+E/S: 1145.00 sq units
+Using geometric area for KITCHEN: 1002.43 sq units
+Using geometric area for Flat Roof: 608.25 sq units
+Using geometric area for St.: 459.00 sq units
+Using geometric area for 11080
+2500: 324.00 sq units
+Using geometric area for A: 258.50 sq units
+Using geometric area for 2500: 234.00 sq units
+Using geometric area for HALL
+SITTING: 215.00 sq units
+Using geometric area for Drawing Title: 6979.96 sq units
+Using geometric area for 17.778 | 17.681 | 17.735
+17.829 | fm/h: 6180.59 sq units
+Using geometric area for 2 Storey
+FFL = 15.89 | 4: 5893.08 sq units
+Using geometric area for mceldowneycolm@gmail.com | +353 (0)85 8370771 | E. | T.: 4573.69 sq units
+Using geometric area for 17.305 | Driveway | sm/h
+sm/h: 4229.05 sq units
+Using geometric area for Connection to existing public mains water >>: 2907.83 sq units
+Using geometric area for 17.340: 2400.98 sq units
+Using geometric area for 17.773 | 17.875: 2302.79 sq units
+Using geometric area for Garden: 1499.88 sq units
+Using geometric area for 17.614 | FH: 1376.23 sq units
+Using geometric area for 17.066: 1231.31 sq units
+Using geometric area for 17.817: 1115.74 sq units
+Using geometric area for sm/h: 139.81 sq units
+Using geometric area for overhead wire: 576.84 sq units
+Using geometric area for Patio: 537.70 sq units
+Using geometric area for WM | LP: 527.20 sq units
+Using geometric area for RS: 520.07 sq units
+Using geometric area for 17.411: 501.10 sq units
+Using geometric area for 2 Storey
+FFL = 19.38
+RL = 26.84
+2 Storey
+FFL = 19.38
+RL
+26 84: 490.18 sq units
+Using geometric area for 17.327: 435.16 sq units
+Using geometric area for DWELLING
+RIDGE 24.905
+EAVES 21.958
+FFL 16.765: 381.59 sq units
+Using geometric area for 5: 372.49 sq units
+Using geometric area for 17.125: 358.96 sq units
+Using geometric area for 17.576: 339.52 sq units
+Using geometric area for 44: 310.33 sq units
+Using geometric area for 17.706 | 17.768
+17.879: 309.50 sq units
+Using geometric area for 17.370: 273.74 sq units
+Using geometric area for 16.984: 230.58 sq units
+Using geometric area for 16.905: 217.88 sq units
+Using geometric area for 18.047: 196.84 sq units
+Using geometric area for 10.3m
+10.8m: 188.03 sq units
+Using geometric area for 17.573: 182.68 sq units
+Using geometric area for Proposed
+FFL +17.500: 180.24 sq units
+Using geometric area for 17.00: 175.60 sq units
+Using geometric area for 6: 171.44 sq units
+Using geometric area for 17.148: 169.12 sq units
+Using geometric area for 17.503: 168.75 sq units
+Using geometric area for 17.397: 162.57 sq units
+Using geometric area for 16.893: 160.46 sq units
+Using geometric area for 16.697: 149.86 sq units
+Using geometric area for SHED: 149.76 sq units
+Using geometric area for 16.971: 147.56 sq units
+Using geometric area for 17.425: 140.83 sq units
+Using geometric area for 17.098: 130.00 sq units
+Using geometric area for fm/h: 125.45 sq units
+Using geometric area for 17.50: 116.61 sq units
+Using geometric area for 17.287: 113.26 sq units
+Using geometric area for 17.852: 107.17 sq units
+Using geometric room areas for 82 rooms
+Using geometric area for mceldowneycolm@gmail.com | +353 (0)85 8370771 | architect, mriai
+colm mceldowney | E. | T.: 11900.00 sq units
+Using geometric area for Drawing Title | Elevations: 9405.00 sq units
+Using geometric area for Project | Dwelling House at 43 Orchard Grove,
+Ballyraine, Letterkenny, Co. Donegal
+for Eamonn & Claire McEldowney: 6862.55 sq units
+Using geometric area for 9510: 896.00 sq units
+Using geometric area for Scale | 1:100 @ A3
+Jan. 2025: 1900.00 sq units
+Using geometric area for Drawing No. | PL004
+CM: 1805.00 sq units
+Using geometric area for Date: 1400.00 sq units
+Using geometric area for Drawn By: 438.41 sq units
+Using geometric area for 3225: 576.00 sq units
+Using geometric area for RECEIVED: 31/01/2025: 425.70 sq units
+Using geometric area for St. | LIVING: 32994.00 sq units
+Using geometric area for BEDROOM 3 | LANDING | FF FFL
++20.560: 30723.50 sq units
+Using geometric area for Walk-in: 16650.00 sq units
+Using geometric area for 11080: 9371.56 sq units
+Using geometric area for Drawing Title | Ground Floor & First Floor: 9350.00 sq units
+Using geometric area for 4015: 8067.05 sq units
+Using geometric area for 4015 | planter: 8010.86 sq units
+Using geometric area for 8600: 4258.00 sq units
+Using geometric area for 3.0m x 4.5m
+proprietary
+metal garden
+shed on conc.
+slab: 3402.00 sq units
+Using geometric area for concrete path: 798.00 sq units
+Using geometric area for Scale | 1:100 / 1:200 @ A3
+Jan. 2025: 1900.00 sq units
+Using geometric area for 10500
+1650: 1795.62 sq units
+Using geometric area for Drawing No. | PL003
+CM: 1710.00 sq units
+Using geometric area for BEDROOM 2: 1425.00 sq units
+Using geometric area for MASTER: 1383.00 sq units
+Using geometric area for 1900: 1378.00 sq units
+Using geometric area for BATHROOM
+E/S: 1145.00 sq units
+Using geometric area for KITCHEN: 1002.43 sq units
+Using geometric area for Flat Roof: 608.25 sq units
+Using geometric area for St.: 459.00 sq units
+Using geometric area for 11080
+2500: 324.00 sq units
+Using geometric area for A: 258.50 sq units
+Using geometric area for 2500: 234.00 sq units
+Using geometric area for HALL
+SITTING: 215.00 sq units
+Using geometric area for Drawing Title: 6979.96 sq units
+Using geometric area for 17.778 | 17.681 | 17.735
+17.829 | fm/h: 6180.59 sq units
+Using geometric area for 2 Storey
+FFL = 15.89 | 4: 5893.08 sq units
+Using geometric area for mceldowneycolm@gmail.com | +353 (0)85 8370771 | E. | T.: 4573.69 sq units
+Using geometric area for 17.305 | Driveway | sm/h
+sm/h: 4229.05 sq units
+Using geometric area for Connection to existing public mains water >>: 2907.83 sq units
+Using geometric area for 17.340: 2400.98 sq units
+Using geometric area for 17.773 | 17.875: 2302.79 sq units
+Using geometric area for Garden: 1499.88 sq units
+Using geometric area for 17.614 | FH: 1376.23 sq units
+Using geometric area for 17.066: 1231.31 sq units
+Using geometric area for 17.817: 1115.74 sq units
+Using geometric area for sm/h: 139.81 sq units
+Using geometric area for overhead wire: 576.84 sq units
+Using geometric area for Patio: 537.70 sq units
+Using geometric area for WM | LP: 527.20 sq units
+Using geometric area for RS: 520.07 sq units
+Using geometric area for 17.411: 501.10 sq units
+Using geometric area for 2 Storey
+FFL = 19.38
+RL = 26.84
+2 Storey
+FFL = 19.38
+RL
+26 84: 490.18 sq units
+Using geometric area for 17.327: 435.16 sq units
+Using geometric area for DWELLING
+RIDGE 24.905
+EAVES 21.958
+FFL 16.765: 381.59 sq units
+Using geometric area for 5: 372.49 sq units
+Using geometric area for 17.125: 358.96 sq units
+Using geometric area for 17.576: 339.52 sq units
+Using geometric area for 44: 310.33 sq units
+Using geometric area for 17.706 | 17.768
+17.879: 309.50 sq units
+Using geometric area for 17.370: 273.74 sq units
+Using geometric area for 16.984: 230.58 sq units
+Using geometric area for 16.905: 217.88 sq units
+Using geometric area for 18.047: 196.84 sq units
+Using geometric area for 10.3m
+10.8m: 188.03 sq units
+Using geometric area for 17.573: 182.68 sq units
+Using geometric area for Proposed
+FFL +17.500: 180.24 sq units
+Using geometric area for 17.00: 175.60 sq units
+Using geometric area for 6: 171.44 sq units
+Using geometric area for 17.148: 169.12 sq units
+Using geometric area for 17.503: 168.75 sq units
+Using geometric area for 17.397: 162.57 sq units
+Using geometric area for 16.893: 160.46 sq units
+Using geometric area for 16.697: 149.86 sq units
+Using geometric area for SHED: 149.76 sq units
+Using geometric area for 16.971: 147.56 sq units
+Using geometric area for 17.425: 140.83 sq units
+Using geometric area for 17.098: 130.00 sq units
+Using geometric area for fm/h: 125.45 sq units
+Using geometric area for 17.50: 116.61 sq units
+Using geometric area for 17.287: 113.26 sq units
+Using geometric area for 17.852: 107.17 sq units
+Using geometric room areas for 82 rooms
+DEBUG: Generated 55 base BOQ items, enhanced to 55 items with 0 takeoff breakdowns
+✅ Generated 55 BOQ items
+
+📋 Complete BOQ Items Generated:
+   1. A1: Contractor's preliminaries, site establishment, welfare, scaffolding, insurances, H&S
+      Quantity: 1.0 item
+      Category: preliminaries, Trade: general
+   2. A2: Temporary works (hoardings, fencing, signage)
+      Quantity: 1.0 item
+      Category: preliminaries, Trade: general
+   3. B1: Site clearance to footprint area
+      Quantity: 120.0 m²
+      Category: substructure, Trade: civil
+   4. B2: Topsoil strip 150mm
+      Quantity: 18.0 m³
+      Category: substructure, Trade: civil
+   5. B3: Trench excavation for strip foundations
+      Quantity: 45.0 m³
+      Category: substructure, Trade: civil
+   6. B4: Hardcore filling, compacted in layers
+      Quantity: 60.0 m³
+      Category: substructure, Trade: civil
+   7. B5: Blinding concrete 100mm thick
+      Quantity: 100.0 m²
+      Category: substructure, Trade: civil
+   8. B6: Strip foundations 600 × 200mm in concrete
+      Quantity: 9.0 m³
+      Category: substructure, Trade: civil
+   9. B7: DPC – 300mm above ground level
+      Quantity: 40.0 m
+      Category: substructure, Trade: civil
+   10. B8: Underground drainage including pipes, manholes, and connections
+      Quantity: 28.0 m
+      Category: substructure, Trade: civil
+   11. C1.1: Facing brickwork 102.5mm thick to external walls
+      Quantity: 108.0 m²
+      Category: masonry, Trade: civil
+   12. C1.2: Blockwork 100mm thick to inner leaf of cavity wall
+      Quantity: 108.0 m²
+      Category: masonry, Trade: civil
+   13. C1.3: 50mm cavity insulation
+      Quantity: 108.0 m²
+      Category: insulation, Trade: civil
+   14. C1.4: Precast concrete lintels over openings
+      Quantity: 25.2 m
+      Category: concrete, Trade: civil
+   15. C1.5: Precast concrete window cills 150 × 100mm
+      Quantity: 9.6 m
+      Category: concrete, Trade: civil
+   16. C2.1: 100mm blockwork partitions
+      Quantity: 97.2 m²
+      Category: masonry, Trade: civil
+   17. C2.2: 50mm timber stud partitions
+      Quantity: 64.8 m²
+      Category: partitions, Trade: civil
+   18. C3.1: Ground floor concrete slab 100mm thick
+      Quantity: 100.0 m²
+      Category: concrete, Trade: civil
+   19. C3.2: Screed 50mm thick
+      Quantity: 100.0 m²
+      Category: concrete, Trade: civil
+   20. C3.3: First floor timber joists & decking
+      Quantity: 50.0 m²
+      Category: timber, Trade: joinery
+   21. C4.1: Treated softwood rafters 47 × 150mm @ 400mm centres
+      Quantity: 325.0 m
+      Category: timber, Trade: joinery
+   22. C4.2: Roof battens 25 × 50mm
+      Quantity: 234.0 m
+      Category: timber, Trade: joinery
+   23. C4.3: Roof covering: clay tiles incl. ridges & hips
+      Quantity: 130.0 m²
+      Category: roofing, Trade: roofing
+   24. C4.4: Fascias, soffits, bargeboards
+      Quantity: 48.0 m
+      Category: timber, Trade: joinery
+   25. C4.5: Rainwater gutters & downpipes
+      Quantity: 28.0 m
+      Category: drainage, Trade: plumbing
+   26. C5.1: External windows – frames & glazing, PVC
+      Quantity: 8.0 no.
+      Category: windows, Trade: joinery
+   27. C5.2: External doors – frames & doorsets, PVC, composite
+      Quantity: 4.0 no.
+      Category: doors, Trade: joinery
+   28. C5.3: Internal doors – frames & doorsets, PVC, composite
+      Quantity: 9.0 no.
+      Category: doors, Trade: joinery
+   29. D1.1: 13mm plaster to walls
+      Quantity: 345.6 m²
+      Category: finishes, Trade: plastering
+   30. D1.2: 13mm plasterboard ceilings, skim finish
+      Quantity: 150.0 m²
+      Category: finishes, Trade: plastering
+   31. D1.3: Emulsion paint finish to walls
+      Quantity: 345.6 m²
+      Category: finishes, Trade: painting
+   32. D1.4: Emulsion paint finish to ceilings
+      Quantity: 150.0 m²
+      Category: finishes, Trade: painting
+   33. D1.5: Gloss paint to timber joinery (doors, skirtings)
+      Quantity: 64.0 m²
+      Category: finishes, Trade: painting
+   34. D2.1: Floor tiling (kitchen & bathroom)
+      Quantity: 15.0 m²
+      Category: finishes, Trade: tiling
+   35. D2.2: Timber flooring – living areas
+      Quantity: 40.0 m²
+      Category: finishes, Trade: flooring
+   36. D2.3: Carpet – bedrooms
+      Quantity: 45.0 m²
+      Category: finishes, Trade: flooring
+   37. E1: Kitchen units & worktops
+      Quantity: 1.0 item
+      Category: fittings, Trade: joinery
+   38. E2: Bathroom sanitaryware (WC, basin, bath, taps)
+      Quantity: 1.0 item
+      Category: fittings, Trade: plumbing
+   39. E3: Wardrobes / built-in cupboards
+      Quantity: 3.0 item
+      Category: fittings, Trade: joinery
+   40. E4: Staircase & balustrade
+      Quantity: 1.0 item
+      Category: fittings, Trade: joinery
+   41. F1.1: Cold water supply, hot water pipework
+      Quantity: 50.0 m
+      Category: plumbing, Trade: plumbing
+   42. F1.2: Waste & soil pipes
+      Quantity: 30.0 m
+      Category: plumbing, Trade: plumbing
+   43. F1.3: Radiators incl. valves & connections
+      Quantity: 6.0 no.
+      Category: heating, Trade: plumbing
+   44. F1.4: Boiler & associated pipework
+      Quantity: 1.0 item
+      Category: heating, Trade: plumbing
+   45. F2.1: LED ceiling light fittings, supply and fix complete, ceiling
+      Quantity: 10.0 no.
+      Category: electrical, Trade: electrical
+   46. F2.2: Socket outlets 13A, supply and fix complete
+      Quantity: 25.0 no.
+      Category: electrical, Trade: electrical
+   47. F2.3: Light switches single pole, supply and fix complete
+      Quantity: 10.0 no.
+      Category: electrical, Trade: electrical
+   48. F2.4: 2.5mm² PVC insulated copper cable in conduit
+      Quantity: 80.0 m
+      Category: electrical, Trade: electrical
+   49. F2.5: Consumer unit and distribution board
+      Quantity: 1.0 item
+      Category: electrical, Trade: electrical
+   50. F2.6: Smoke alarms
+      Quantity: 5.0 no.
+      Category: electrical, Trade: electrical
+   51. G1: Paths & patios – concrete
+      Quantity: 40.0 m²
+      Category: external, Trade: civil
+   52. G2: Driveway – block paving
+      Quantity: 25.0 m²
+      Category: external, Trade: civil
+   53. G3: Fencing & gates
+      Quantity: 24.0 m
+      Category: external, Trade: civil
+   54. G4: Soft landscaping – turf, planting
+      Quantity: 0.0 m²
+      Category: external, Trade: landscaping
+   55. G5: External drainage connections
+      Quantity: 12.0 m
+      Category: external, Trade: civil
+
+📄 Generating Excel BOQ...
+✅ Excel BOQ generated: /home/ubuntu/automated-boq-system/house_boq_20250826_143023.xlsx
+   File size: 13,067 bytes
+✅ Excel file appears to contain substantial content
+
+🎯 BOQ Generation Summary:
+   - Drawings processed: 3
+   - BOQ items generated: 55
+   - Excel file created: /home/ubuntu/automated-boq-system/house_boq_20250826_143023.xlsx
+   - Measurement standard: MeasurementStandard.SMM7
+
+📋 Drawing Register:
+   Drawing 1: house_elevations.pdf
+      Title: Not detected
+      Number: Not detected
+      Revision: Not detected
+      Scale: Not detected
+   Drawing 2: house_floor_plans.pdf
+      Title: Not detected
+      Number: Not detected
+      Revision: Not detected
+      Scale: Not detected
+   Drawing 3: house_site_plan.pdf
+      Title: Not detected
+      Number: Not detected
+      Revision: Not detected
+      Scale: Not detected
+
+🏆 House BOQ generation test completed successfully!
+✅ User can now download and verify the generated Excel BOQ file
