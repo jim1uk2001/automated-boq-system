@@ -14,12 +14,13 @@ class BOQGenerator:
 
     async def generate_boq(self, project_id: str, drawings_data: List[Dict[str, Any]], 
                           standard: MeasurementStandard) -> List[BOQItem]:
-        """Generate BOQ items from processed drawing data"""
-        boq_items = []
+        """Generate BOQ items from processed drawing data - consolidates quantities from multiple drawings of same building"""
         rules = self.measurement_standards[standard]
         
-        print(f"DEBUG: BOQ Generator processing {len(drawings_data)} drawings")
+        print(f"DEBUG: BOQ Generator processing {len(drawings_data)} drawings for same building")
         
+        all_elements = []
+        all_drawing_ids = []
         processed_drawings = set()
         
         for drawing_data in drawings_data:
@@ -34,34 +35,59 @@ class BOQGenerator:
             if not drawing_type or drawing_type == 'unknown' or drawing_type == 'site':
                 drawing_type = 'architectural'
             
-            print(f"DEBUG: Processing drawing {drawing_id} with {len(elements)} elements")
+            print(f"DEBUG: Collecting elements from drawing {drawing_id} ({drawing_type}) with {len(elements)} elements")
             
-            if drawing_type == 'architectural' or str(drawing_type) == 'DrawingType.ARCHITECTURAL':
-                items = self._process_architectural_elements(
-                    project_id, drawing_id, elements, rules, "General",
-                    drawing_data.get('room_types', {}),
-                    drawing_data.get('wall_finishes', {})
-                )
-                boq_items.extend(items)
-            elif drawing_type == 'structural':
-                items = self._process_structural_elements(
-                    project_id, drawing_id, elements, rules
-                )
-                boq_items.extend(items)
-            elif drawing_type == 'mep':
-                items = self._process_mep_elements(
-                    project_id, drawing_id, elements, rules
-                )
-                boq_items.extend(items)
-            else:
-                items = self._process_architectural_elements(
-                    project_id, drawing_id, elements, rules, "General",
-                    drawing_data.get('room_types', {}),
-                    drawing_data.get('wall_finishes', {})
-                )
-                boq_items.extend(items)
+            for element in elements:
+                element['source_drawing_type'] = drawing_type
+                element['source_drawing_id'] = drawing_id
+            
+            all_elements.extend(elements)
+            all_drawing_ids.append(drawing_id)
         
+        print(f"DEBUG: Processing {len(all_elements)} total elements from {len(all_drawing_ids)} drawings as single building")
+        
+        representative_drawing_id = all_drawing_ids[0] if all_drawing_ids else "consolidated"
+        
+        boq_items = self._process_consolidated_building_elements(
+            project_id, representative_drawing_id, all_elements, rules, "General"
+        )
+        
+        print(f"DEBUG: Generated {len(boq_items)} consolidated BOQ items for single building")
         return boq_items
+
+    def _process_consolidated_building_elements(self, project_id: str, drawing_id: str, 
+                                             all_elements: List[Dict], rules: Dict, 
+                                             building_type: str = "General") -> List[BOQItem]:
+        """Process elements from multiple drawings as a single consolidated building"""
+        
+        all_lines = [e for e in all_elements if e.get('type') == 'line']
+        all_circles = [e for e in all_elements if e.get('type') == 'circle']
+        all_rectangles = [e for e in all_elements if e.get('type') == 'rectangle']
+        all_polylines = [e for e in all_elements if e.get('type') == 'polyline']
+        
+        print(f"DEBUG: Consolidated elements - {len(all_lines)} lines, {len(all_circles)} circles, {len(all_rectangles)} rectangles, {len(all_polylines)} polylines")
+        
+        total_building_area = 0
+        if all_rectangles:
+            largest_rect = max(all_rectangles, key=lambda x: x.get('area', 0))
+            total_building_area = largest_rect.get('area', 0) / 1000000
+            print(f"DEBUG: Using largest rectangle from drawing {largest_rect.get('source_drawing_id', 'unknown')}")
+        
+        if total_building_area == 0:
+            exterior_walls = [e for e in all_lines if e.get('length', 0) > 3000]
+            if exterior_walls:
+                total_perimeter = sum(wall.get('length', 0) for wall in exterior_walls) / 1000
+                total_building_area = (total_perimeter / 4) ** 2
+        
+        if total_building_area == 0:
+            total_building_area = 100
+        
+        print(f"DEBUG: Consolidated building area: {total_building_area}m²")
+        
+        return self._generate_building_boq_items(
+            project_id, drawing_id, total_building_area, all_lines, all_circles, 
+            all_rectangles, all_polylines, rules
+        )
 
     def _process_architectural_elements(self, project_id: str, drawing_id: str, 
                                       elements: List[Dict], rules: Dict, 
@@ -69,39 +95,45 @@ class BOQGenerator:
                                       room_types: Dict = None,
                                       wall_finishes: Dict = None) -> List[BOQItem]:
         """Process architectural elements into comprehensive SMM7 BOQ items"""
-        boq_items = []
-        room_types = room_types or {}
-        wall_finishes = wall_finishes or {}
-        
-        element_types = {}
-        for e in elements:
-            elem_type = e.get('type', 'unknown')
-            element_types[elem_type] = element_types.get(elem_type, 0) + 1
-        print(f"DEBUG: Element types in drawing: {element_types}")
-        
-        building_config = self._get_building_type_config(building_type)
         
         all_lines = [e for e in elements if e.get('type') == 'line']
         all_circles = [e for e in elements if e.get('type') == 'circle']
         all_rectangles = [e for e in elements if e.get('type') == 'rectangle']
         all_polylines = [e for e in elements if e.get('type') == 'polyline']
         
-        print(f"DEBUG: Found {len(all_lines)} lines, {len(all_circles)} circles, {len(all_rectangles)} rectangles, {len(all_polylines)} polylines")
-        
-        exterior_walls = [e for e in all_lines if e.get('length', 0) > 3000]  # Long walls (>3m)
-        interior_walls = [e for e in all_lines if 1000 < e.get('length', 0) <= 3000]  # Medium walls (1-3m)
-        partition_walls = [e for e in all_lines if 500 < e.get('length', 0) <= 1000]  # Short walls (0.5-1m)
-        
         total_building_area = 0
         if all_rectangles:
             largest_rect = max(all_rectangles, key=lambda x: x.get('area', 0))
-            total_building_area = largest_rect.get('area', 0) / 1000000  # Convert mm² to m²
-        elif exterior_walls:
-            total_perimeter = sum(wall.get('length', 0) for wall in exterior_walls) / 1000
-            total_building_area = (total_perimeter / 4) ** 2  # Rough square estimate
+            total_building_area = largest_rect.get('area', 0) / 1000000
+        elif all_lines:
+            exterior_walls = [e for e in all_lines if e.get('length', 0) > 3000]
+            if exterior_walls:
+                total_perimeter = sum(wall.get('length', 0) for wall in exterior_walls) / 1000
+                total_building_area = (total_perimeter / 4) ** 2
         
         if total_building_area == 0:
-            total_building_area = 100  # Default 100m² for 3-bedroom house
+            total_building_area = 100
+        
+        return self._generate_building_boq_items(
+            project_id, drawing_id, total_building_area, all_lines, all_circles,
+            all_rectangles, all_polylines, rules
+        )
+
+    def _generate_building_boq_items(self, project_id: str, drawing_id: str, 
+                                   total_building_area: float, all_lines: List[Dict],
+                                   all_circles: List[Dict], all_rectangles: List[Dict],
+                                   all_polylines: List[Dict], rules: Dict) -> List[BOQItem]:
+        """Generate BOQ items for a single building using consolidated elements"""
+        boq_items = []
+        
+        building_type = "General"
+        building_config = self._get_building_type_config(building_type)
+        room_types = {}
+        wall_finishes = {}
+        
+        exterior_walls = [e for e in all_lines if e.get('length', 0) > 3000]
+        interior_walls = [e for e in all_lines if 1000 < e.get('length', 0) <= 3000]
+        partition_walls = [e for e in all_lines if 500 < e.get('length', 0) <= 1000]
         
         print(f"DEBUG: Estimated building area: {total_building_area}m²")
         
@@ -119,7 +151,7 @@ class BOQGenerator:
             category="preliminaries", trade="general", measurement_standard=MeasurementStandard.SMM7
         ))
         
-        site_area = total_building_area * 1.2  # 20% larger than building footprint
+        site_area = total_building_area * 1.2
         
         boq_items.append(BOQItem(
             project_id=project_id, drawing_id=drawing_id,
