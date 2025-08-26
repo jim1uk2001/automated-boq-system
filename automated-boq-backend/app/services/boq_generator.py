@@ -4,10 +4,14 @@ import numpy as np
 from ..models import BOQItem, MeasurementStandard, Drawing
 from ..schemas import BOQItemResponse
 from .qs_expert_system import QSExpertSystem
+from .boq_description_compiler import BOQDescriptionCompiler
+from .room_quantity_calculator import RoomQuantityCalculator
 
 class BOQGenerator:
     def __init__(self):
         self.qs_expert = QSExpertSystem()
+        self.description_compiler = BOQDescriptionCompiler()
+        self.room_calculator = RoomQuantityCalculator()
         self.measurement_standards = {
             MeasurementStandard.SMM7: self._get_smm7_rules(),
             MeasurementStandard.RICS_NRM: self._get_rics_nrm_rules(),
@@ -22,12 +26,16 @@ class BOQGenerator:
         print(f"DEBUG: BOQ Generator processing {len(drawings_data)} drawings for same building")
         
         all_elements = []
+        all_text_annotations = []
+        all_room_data = {}
         all_drawing_ids = []
         processed_drawings = set()
         
         for drawing_data in drawings_data:
             drawing_id = drawing_data.get('drawing_id')
             elements = drawing_data.get('elements', [])
+            text_annotations = drawing_data.get('text_annotations', [])
+            room_types = drawing_data.get('room_types', {})
             drawing_type = drawing_data.get('drawing_type')
             
             if drawing_id in processed_drawings:
@@ -37,31 +45,48 @@ class BOQGenerator:
             if not drawing_type or drawing_type == 'unknown' or drawing_type == 'site':
                 drawing_type = 'architectural'
             
-            print(f"DEBUG: Collecting elements from drawing {drawing_id} ({drawing_type}) with {len(elements)} elements")
+            print(f"DEBUG: Collecting elements from drawing {drawing_id} ({drawing_type}) with {len(elements)} elements, {len(text_annotations)} text annotations, and {len(room_types)} room types")
             
             for element in elements:
                 element['source_drawing_type'] = drawing_type
                 element['source_drawing_id'] = drawing_id
             
             all_elements.extend(elements)
+            all_text_annotations.extend(text_annotations)
+            
+            if room_types:
+                all_room_data.update(room_types)
+                
             all_drawing_ids.append(drawing_id)
         
-        print(f"DEBUG: Processing {len(all_elements)} total elements from {len(all_drawing_ids)} drawings as single building")
+        print(f"DEBUG: Processing {len(all_elements)} total elements, {len(all_text_annotations)} text annotations, and {len(all_room_data)} room types from {len(all_drawing_ids)} drawings as single building")
         
         representative_drawing_id = all_drawing_ids[0] if all_drawing_ids else "consolidated"
         
-        boq_items = self._process_consolidated_building_elements(
+        base_boq_items = self._process_consolidated_building_elements(
             project_id, representative_drawing_id, all_elements, rules, "General"
         )
         
-        print(f"DEBUG: Generated {len(boq_items)} consolidated BOQ items for single building")
+        from ..models import DrawingType
+        enhanced_boq_items = self.description_compiler.compile_enhanced_descriptions(
+            base_boq_items, all_text_annotations, DrawingType.ARCHITECTURAL
+        )
         
-        validation_results = self.qs_expert.validate_boq_compliance(boq_items, MeasurementStandard.SMM7)
+        takeoff_data = self.room_calculator.calculate_room_based_quantities(
+            enhanced_boq_items, {'room_types': all_room_data}, all_elements
+        )
+        
+        for item in enhanced_boq_items:
+            item.takeoff_data = takeoff_data.get(item.item_code)
+        
+        print(f"DEBUG: Generated {len(base_boq_items)} base BOQ items, enhanced to {len(enhanced_boq_items)} items with {len(takeoff_data)} takeoff breakdowns")
+        
+        validation_results = self.qs_expert.validate_boq_compliance(enhanced_boq_items, standard)
         
         if not validation_results['compliant']:
             print(f"QS Validation Issues: {validation_results['issues']}")
             
-        return boq_items
+        return enhanced_boq_items
 
     def _process_consolidated_building_elements(self, project_id: str, drawing_id: str, 
                                              all_elements: List[Dict], rules: Dict, 

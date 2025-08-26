@@ -1,0 +1,59 @@
+Neither CUDA nor MPS are available - defaulting to CPU. Note: This module is much faster with a GPU.
+/home/ubuntu/.pyenv/versions/3.12.8/lib/python3.12/site-packages/torch/utils/data/dataloader.py:666: UserWarning: 'pin_memory' argument is set as true but no accelerator is found, then device pinned memory won't be used.
+  warnings.warn(warn_msg)
+/home/ubuntu/automated-boq-system/test_house_boq_generation.py:85: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  drawing.processed_at = datetime.utcnow()
+Traceback (most recent call last):
+  File "/home/ubuntu/automated-boq-system/test_house_boq_generation.py", line 123, in test_house_boq_generation
+    boq_items = await boq_generator.generate_boq(
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/automated-boq-system/automated-boq-backend/app/services/boq_generator.py", line 83, in generate_boq
+    setattr(item, 'takeoff_data', takeoff_data.get(item.item_code))
+  File "/home/ubuntu/.pyenv/versions/3.12.8/lib/python3.12/site-packages/pydantic/main.py", line 997, in __setattr__
+    elif (setattr_handler := self._setattr_handler(name, value)) is not None:
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/.pyenv/versions/3.12.8/lib/python3.12/site-packages/pydantic/main.py", line 1044, in _setattr_handler
+    raise ValueError(f'"{cls.__name__}" object has no field "{name}"')
+ValueError: "BOQItem" object has no field "takeoff_data"
+🏠 Testing BOQ generation with user's two storey house drawings...
+✅ All house drawings found
+📁 Created project: Two Storey House BOQ Generation Test
+
+📄 Processing Drawing 1: House Elevations - Front, Rear, Side views
+   📋 Processing house_elevations.pdf...
+   ✅ Successfully processed house_elevations.pdf
+      - Text annotations: 90
+      - Elements detected: 3232
+      - Scale: not detected
+      - Drawing type: DrawingType.ARCHITECTURAL
+
+📄 Processing Drawing 2: Floor Plans - Ground and First Floor layouts
+   📋 Processing house_floor_plans.pdf...
+   ✅ Successfully processed house_floor_plans.pdf
+      - Text annotations: 85
+      - Elements detected: 2925
+      - Scale: not detected
+      - Drawing type: DrawingType.ARCHITECTURAL
+
+📄 Processing Drawing 3: Site Layout Plan - Property boundaries and positioning
+   📋 Processing house_site_plan.pdf...
+   ✅ Successfully processed house_site_plan.pdf
+      - Text annotations: 135
+      - Elements detected: 6113
+      - Scale: not detected
+      - Drawing type: DrawingType.ARCHITECTURAL
+
+📊 Generating BOQ from 3 processed drawings...
+DEBUG: BOQ Generator processing 3 drawings for same building
+DEBUG: Collecting elements from drawing e010ab09-a599-48b7-b5d4-a6dcbe62c30c (DrawingType.ARCHITECTURAL) with 3232 elements, 90 text annotations, and 0 room types
+DEBUG: Collecting elements from drawing 7d288df8-6984-4c0c-8474-dc060bf5c623 (DrawingType.ARCHITECTURAL) with 2925 elements, 85 text annotations, and 0 room types
+DEBUG: Collecting elements from drawing b2235422-5a2e-4535-8685-a17adcb59779 (DrawingType.ARCHITECTURAL) with 6113 elements, 135 text annotations, and 0 room types
+DEBUG: Processing 12270 total elements, 310 text annotations, and 0 room types from 3 drawings as single building
+DEBUG: Consolidated elements - 6503 lines, 5767 circles, 0 rectangles, 0 polylines
+DEBUG: Consolidated building area: 100m²
+DEBUG: Estimated building area: 100m²
+DEBUG: Generated 55 comprehensive SMM7 BOQ items
+❌ Error generating BOQ: "BOQItem" object has no field "takeoff_data"
+
+💥 House BOQ generation test failed!
+❌ Need to investigate and fix the processing pipeline

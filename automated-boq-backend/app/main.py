@@ -346,9 +346,10 @@ async def generate_boq(
         elements = processed_data.get('elements', [])
         dimensions = processed_data.get('dimensions', [])
         text_annotations = processed_data.get('text_annotations', [])
+        room_types = processed_data.get('room_types', {})  # Extract room data
         
         print(f"DEBUG: Drawing {drawing.filename} processed_data keys: {list(processed_data.keys())}")
-        print(f"DEBUG: Elements count: {len(elements)}, Dimensions count: {len(dimensions)}, Text annotations count: {len(text_annotations)}")
+        print(f"DEBUG: Elements count: {len(elements)}, Dimensions count: {len(dimensions)}, Text annotations count: {len(text_annotations)}, Room types: {len(room_types)}")
         if elements:
             print(f"DEBUG: First few elements: {elements[:3]}")
         
@@ -357,7 +358,8 @@ async def generate_boq(
             "drawing_type": drawing.drawing_type.value if drawing.drawing_type else "architectural",
             "elements": elements,
             "dimensions": dimensions,
-            "text_annotations": text_annotations
+            "text_annotations": text_annotations,
+            "room_types": room_types  # Include room data
         })
     
     print(f"DEBUG: Total drawings_data prepared: {len(drawings_data)}")

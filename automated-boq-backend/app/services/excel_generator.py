@@ -1,5 +1,5 @@
 from openpyxl import Workbook
-from openpyxl.styles import Font, Alignment, Border, Side, Protection
+from openpyxl.styles import Font, Alignment, Border, Side, PatternFill, Protection
 from openpyxl.utils import get_column_letter
 from typing import List, Dict, Any, Optional
 import io
@@ -33,11 +33,13 @@ class ExcelGenerator:
         cover.title = 'Cover'
         drawings = wb.create_sheet('Drawings')
         preambles = wb.create_sheet('Preambles')
+        takeoff = wb.create_sheet('Take-off Sheet')  # Add take-off sheet
         boq = wb.create_sheet('BOQ')
 
         self._create_cover_page(cover, project)
         self._create_drawings_register(drawings, project)
         self._create_preambles_page(preambles, project.measurement_standard)
+        self._create_takeoff_sheet(takeoff, project, boq_items)  # Create take-off sheet
         self._create_boq_page(boq, project, boq_items)
 
         wb.active = cover
@@ -165,6 +167,97 @@ class ExcelGenerator:
         ws.protection.sheet = True
         ws.protection.password = "boq2024"
         ws.protection.enable()
+
+    def _create_takeoff_sheet(self, ws, project: Project, boq_items: List[BOQItem]):
+        """Create take-off sheet with room-by-room quantity breakdowns"""
+        ws.merge_cells('A1:F1')
+        ws['A1'] = f'TAKE-OFF SHEET - {project.name}'
+        ws['A1'].font = Font(size=16, bold=True)
+        ws['A1'].alignment = Alignment(horizontal='center')
+        
+        ws.merge_cells('A2:F2')
+        ws['A2'] = 'Room-by-room quantity breakdown for verification'
+        ws['A2'].font = Font(size=12, italic=True)
+        ws['A2'].alignment = Alignment(horizontal='center')
+        
+        # Set column widths
+        column_widths = [8, 60, 12, 8, 15, 15]  # Ref, Description, Quantity, Unit, Rate, Amount
+        for col, width in enumerate(column_widths, 1):
+            ws.column_dimensions[get_column_letter(col)].width = width
+        
+        row = 4
+        
+        for item in boq_items:
+            takeoff_data = getattr(item, 'takeoff_data', None)
+            if takeoff_data and takeoff_data.get('room_breakdown'):
+                ws.merge_cells(f'A{row}:F{row}')
+                ws[f'A{row}'] = f"Item {item.item_code} — {takeoff_data['description'].upper()}"
+                ws[f'A{row}'].font = Font(bold=True, size=12)
+                ws[f'A{row}'].alignment = Alignment(horizontal='left')
+                row += 1
+                
+                headers = ['Ref', 'Description', 'Quantity', 'Unit', 'Rate (£)', 'Amount (£)']
+                for col, header in enumerate(headers, 1):
+                    cell = ws.cell(row=row, column=col, value=header)
+                    cell.font = Font(bold=True)
+                    cell.alignment = Alignment(horizontal='center')
+                    cell.border = self.thin_border
+                row += 1
+                
+                subtotal_quantity = 0
+                for room_entry in takeoff_data['room_breakdown']:
+                    ws.cell(row=row, column=1, value=room_entry['ref'])
+                    ws.cell(row=row, column=2, value=room_entry['description'])
+                    ws.cell(row=row, column=3, value=room_entry['quantity'])
+                    ws.cell(row=row, column=4, value=room_entry['unit'])
+                    ws.cell(row=row, column=5, value='')  # Rate (empty for verification)
+                    ws.cell(row=row, column=6, value='')  # Amount (empty for verification)
+                    
+                    subtotal_quantity += room_entry['quantity']
+                    
+                    for col in range(1, 7):
+                        cell = ws.cell(row=row, column=col)
+                        cell.border = self.thin_border
+                        cell.alignment = Alignment(horizontal='left' if col == 2 else 'center')
+                    
+                    row += 1
+                
+                ws.cell(row=row, column=1, value='—')
+                ws.cell(row=row, column=2, value='Subtotal (sum of the above, checking total)')
+                ws.cell(row=row, column=3, value=round(subtotal_quantity, 2))
+                ws.cell(row=row, column=4, value=takeoff_data['unit'])
+                ws.cell(row=row, column=5, value='')
+                ws.cell(row=row, column=6, value='')
+                
+                for col in range(1, 7):
+                    cell = ws.cell(row=row, column=col)
+                    cell.font = Font(bold=True)
+                    cell.border = self.thin_border
+                    cell.alignment = Alignment(horizontal='left' if col == 2 else 'center')
+                
+                row += 1
+                
+                ws.cell(row=row, column=1, value=item.item_code)
+                ws.cell(row=row, column=2, value=f"{item.description} (BOQ pay item)")
+                ws.cell(row=row, column=3, value=item.quantity)
+                ws.cell(row=row, column=4, value=item.unit)
+                ws.cell(row=row, column=5, value='£...')
+                ws.cell(row=row, column=6, value='£...')
+                
+                for col in range(1, 7):
+                    cell = ws.cell(row=row, column=col)
+                    cell.font = Font(bold=True)
+                    cell.fill = PatternFill(start_color="E6F3FF", end_color="E6F3FF", fill_type="solid")
+                    cell.border = self.thin_border
+                    cell.alignment = Alignment(horizontal='left' if col == 2 else 'center')
+                
+                row += 3  # Space between items
+        
+        note_row = row + 2
+        ws.merge_cells(f'A{note_row}:F{note_row}')
+        ws[f'A{note_row}'] = "NOTE: This take-off sheet provides room-by-room breakdowns for quantity verification. Subtotals should match BOQ pay item quantities."
+        ws[f'A{note_row}'].font = Font(italic=True, size=10)
+        ws[f'A{note_row}'].alignment = Alignment(horizontal='left', wrap_text=True)
 
     def _get_measurement_standard_preambles(self, standard: str) -> List[tuple]:
         """Get comprehensive preambles for specific measurement standard"""

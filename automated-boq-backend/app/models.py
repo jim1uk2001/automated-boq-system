@@ -88,6 +88,7 @@ class BOQItem(BaseModel):
     category: str  # "excavation", "concrete", "masonry", etc.
     trade: str  # "civil", "electrical", "plumbing", etc.
     measurement_standard: MeasurementStandard
+    takeoff_data: Optional[Dict[str, Any]] = None
     notes: Optional[str] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
