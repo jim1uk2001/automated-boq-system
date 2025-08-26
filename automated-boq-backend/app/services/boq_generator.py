@@ -3,9 +3,11 @@ import uuid
 import numpy as np
 from ..models import BOQItem, MeasurementStandard, Drawing
 from ..schemas import BOQItemResponse
+from .qs_expert_system import QSExpertSystem
 
 class BOQGenerator:
     def __init__(self):
+        self.qs_expert = QSExpertSystem()
         self.measurement_standards = {
             MeasurementStandard.SMM7: self._get_smm7_rules(),
             MeasurementStandard.RICS_NRM: self._get_rics_nrm_rules(),
@@ -53,6 +55,12 @@ class BOQGenerator:
         )
         
         print(f"DEBUG: Generated {len(boq_items)} consolidated BOQ items for single building")
+        
+        validation_results = self.qs_expert.validate_boq_compliance(boq_items, MeasurementStandard.SMM7)
+        
+        if not validation_results['compliant']:
+            print(f"QS Validation Issues: {validation_results['issues']}")
+            
         return boq_items
 
     def _process_consolidated_building_elements(self, project_id: str, drawing_id: str, 
@@ -497,7 +505,7 @@ class BOQGenerator:
         
         boq_items.append(BOQItem(
             project_id=project_id, drawing_id=drawing_id,
-            item_code="F2.3", description="Light switches single pole, supply and fix complete",
+            item_code="F2.3", description="Light switches single pole, supply and fix complete", 
             unit="no.", quantity=switch_count,
             category="electrical", trade="electrical", measurement_standard=MeasurementStandard.SMM7
         ))
@@ -516,7 +524,7 @@ class BOQGenerator:
             category="electrical", trade="electrical", measurement_standard=MeasurementStandard.SMM7
         ))
         
-        smoke_alarm_count = max(bedroom_count + 2, 5)  # Bedrooms + hallways + living
+        smoke_alarm_count = max(bedroom_count + 2, 5)
         boq_items.append(BOQItem(
             project_id=project_id, drawing_id=drawing_id,
             item_code="F2.6", description="Smoke alarms",
