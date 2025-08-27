@@ -12,7 +12,7 @@ class RoomQuantityCalculator:
             'walls', 'floors', 'ceilings', 'finishes', 'electrical', 
             'plumbing', 'flooring', 'painting', 'plastering'
         }
-        self.min_deduction_area = 0.5
+        self.min_deduction_area = 0.1
         
     def calculate_room_based_quantities(self, boq_items: List[BOQItem], 
                                       room_data: Dict[str, Any],
@@ -141,7 +141,7 @@ class RoomQuantityCalculator:
                                                   elements: List[Dict]) -> Dict[str, float]:
         """
         Calculate deductions for detected door and window openings in wall finishes
-        following SMM7 standards (openings under 0.5m² are not deducted)
+        following SMM7 standards (openings under 0.1m² are not deducted)
         """
         deductions = {
             'doors': 0.0,

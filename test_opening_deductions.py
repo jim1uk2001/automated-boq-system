@@ -20,28 +20,28 @@ def test_opening_deductions():
             'type': 'door',
             'width': 0.9,
             'height': 2.1,
-            'area': 1.89,  # 1.89m² > 0.5m² threshold, should be deducted
+            'area': 1.89,  # 1.89m² > 0.1m² threshold, should be deducted
             'room': 'Living Room'
         },
         {
             'type': 'window',
             'width': 1.2,
             'height': 1.5,
-            'area': 1.8,   # 1.8m² > 0.5m² threshold, should be deducted
+            'area': 1.8,   # 1.8m² > 0.1m² threshold, should be deducted
             'room': 'Living Room'
         },
         {
             'type': 'window',
             'width': 0.6,
             'height': 0.8,
-            'area': 0.48,  # 0.48m² < 0.5m² threshold, should NOT be deducted
+            'area': 0.08,  # 0.08m² < 0.1m² threshold, should NOT be deducted
             'room': 'Kitchen'
         },
         {
             'type': 'door',
             'width': 0.8,
             'height': 2.0,
-            'area': 1.6,   # 1.6m² > 0.5m² threshold, should be deducted
+            'area': 1.6,   # 1.6m² > 0.1m² threshold, should be deducted
             'room': 'Bedroom 1'
         }
     ]
@@ -99,16 +99,16 @@ def test_opening_deductions():
         "Test Room", detected_elements
     )
     
-    expected_deductions = 1.89 + 1.8 + 1.6  # Only openings > 0.5m²
+    expected_deductions = 1.89 + 1.8 + 1.6  # Only openings > 0.1m²
     
     print(f"Expected deductions: {expected_deductions:.2f}m²")
     print(f"Actual deductions: {test_deductions['total']:.2f}m²")
-    print(f"Small window (0.48m²) correctly ignored: {'✅' if test_deductions['total'] == expected_deductions else '❌'}")
+    print(f"Small window (0.08m²) correctly ignored: {'✅' if test_deductions['total'] == expected_deductions else '❌'}")
     
     assert abs(test_deductions['total'] - expected_deductions) < 0.01, "SMM7 deduction rules not followed"
     
     print("\n✅ All opening deduction tests passed!")
-    print("✅ SMM7 compliance verified (openings <0.5m² not deducted)")
+    print("✅ SMM7 compliance verified (openings <0.1m² not deducted)")
     print("✅ Wall finish quantities correctly reduced")
 
 def test_deduction_calculation_methods():
@@ -147,7 +147,7 @@ def test_deduction_calculation_methods():
     print(f"Total deductions from mixed formats: {deductions['total']:.2f}m²")
     print(f"Doors: {deductions['count_doors']}, Windows: {deductions['count_windows']}")
     
-    expected_minimum = 2.0 + 1.8 + 1.89  # Known areas > 0.5m²
+    expected_minimum = 2.0 + 1.8 + 1.89  # Known areas > 0.1m²
     assert deductions['total'] >= expected_minimum, "Area calculation methods not working correctly"
     
     print("✅ Multiple area calculation methods working correctly")
