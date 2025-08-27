@@ -12,6 +12,7 @@ class RoomQuantityCalculator:
             'walls', 'floors', 'ceilings', 'finishes', 'electrical', 
             'plumbing', 'flooring', 'painting', 'plastering'
         }
+        self.min_deduction_area = 0.5
         
     def calculate_room_based_quantities(self, boq_items: List[BOQItem], 
                                       room_data: Dict[str, Any],
@@ -69,7 +70,7 @@ class RoomQuantityCalculator:
                 room_area = room_areas[room_name]
                 
                 room_quantity = self._calculate_room_quantity(
-                    item, room_area, total_estimated_area
+                    item, room_area, total_estimated_area, room_name, elements
                 )
                 
                 if room_quantity > 0:
@@ -135,12 +136,88 @@ class RoomQuantityCalculator:
             area -= coords[i+1][0] * coords[i][1]
         
         return abs(area) / 2.0
+    
+    def _calculate_opening_deductions_from_elements(self, room_name: str, 
+                                                  elements: List[Dict]) -> Dict[str, float]:
+        """
+        Calculate deductions for detected door and window openings in wall finishes
+        following SMM7 standards (openings under 0.5m² are not deducted)
+        """
+        deductions = {
+            'doors': 0.0,
+            'windows': 0.0,
+            'total': 0.0,
+            'count_doors': 0,
+            'count_windows': 0
+        }
+        
+        if not elements:
+            return deductions
+            
+        for element in elements:
+            element_type = element.get('type', '').lower()
+            
+            # Calculate element area
+            element_area = 0.0
+            if 'area' in element:
+                element_area = float(element['area'])
+            elif 'width' in element and 'height' in element:
+                element_area = float(element['width']) * float(element['height'])
+            elif 'dimensions' in element:
+                dims = element['dimensions']
+                if isinstance(dims, dict) and 'width' in dims and 'height' in dims:
+                    element_area = float(dims['width']) * float(dims['height'])
+            elif 'bbox' in element:
+                bbox = element['bbox']
+                if isinstance(bbox, (list, tuple)) and len(bbox) >= 4:
+                    width = abs(bbox[2] - bbox[0])
+                    height = abs(bbox[3] - bbox[1])
+                    element_area = (width * height) / 10000  # Very rough conversion
+            
+            if element_area > self.min_deduction_area:
+                if 'door' in element_type:
+                    deductions['doors'] += element_area
+                    deductions['count_doors'] += 1
+                elif 'window' in element_type:
+                    deductions['windows'] += element_area
+                    deductions['count_windows'] += 1
+                    
+        deductions['total'] = deductions['doors'] + deductions['windows']
+        return deductions
         
     def _calculate_room_quantity(self, item: BOQItem, room_area: float, 
-                               total_area: float) -> float:
+                               total_area: float, room_name: str = "", 
+                               elements: List[Dict] = None) -> float:
         """Calculate quantity for specific room based on item type"""
+        if elements is None:
+            elements = []
+            
+        # Check if this is a wall finish item that needs opening deductions
+        is_wall_finish = (item.category.lower() in ['finishes', 'painting', 'plastering'] and
+                         any(keyword in item.description.lower() for keyword in 
+                             ['wall', 'walls', 'plaster', 'paint', 'render', 'wallpaper', 'skim']))
+        
         if item.unit.lower() in ['m²', 'm2']:
-            return room_area
+            if is_wall_finish:
+                # For wall finishes, calculate wall area and apply opening deductions
+                wall_height = 2.7  # Standard wall height in meters
+                perimeter = 4 * math.sqrt(room_area)  # Approximate room perimeter
+                wall_area = perimeter * wall_height
+                
+                deductions = self._calculate_opening_deductions_from_elements(room_name, elements)
+                final_area = max(0, wall_area - deductions['total'])
+                
+                # Log deduction details for verification
+                if deductions['total'] > 0:
+                    print(f"  {room_name} wall finish deductions:")
+                    print(f"    Doors: {deductions['count_doors']} × {deductions['doors']:.2f}m²")
+                    print(f"    Windows: {deductions['count_windows']} × {deductions['windows']:.2f}m²")
+                    print(f"    Total deducted: {deductions['total']:.2f}m²")
+                    print(f"    Wall area: {wall_area:.2f}m² → {final_area:.2f}m²")
+                
+                return final_area
+            else:
+                return room_area
         elif item.unit.lower() == 'm':
             perimeter = 4 * math.sqrt(room_area)  # Approximate room perimeter
             return perimeter
